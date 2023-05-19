@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.fhao.rpc.core.common.*;
 import com.fhao.rpc.core.common.config.ClientConfig;
 import com.fhao.rpc.core.proxy.jdk.JDKProxyFactory;
+import com.fhao.rpc.interfaces.DataService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -11,6 +12,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +26,7 @@ import static com.fhao.rpc.core.common.cache.CommonClientCache.SEND_QUEUE;
  */
 public class Client {
     private Logger logger = LoggerFactory.getLogger(Client.class);
+    LoggingHandler LOGGING_HANDLER = new LoggingHandler(LogLevel.DEBUG);
     public static EventLoopGroup clientGroup = new NioEventLoopGroup();
     private ClientConfig clientConfig;
 
@@ -45,8 +49,7 @@ public class Client {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 //管道中初始化一些逻辑，这里包含了上边所说的编解码器和客户端响应类
-//                ch.pipeline().addLast(new RpcEncoder());
-//                ch.pipeline().addLast(new RpcDecoder());
+//                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
                 ch.pipeline().addLast(new ClientHandler());
             }
@@ -97,5 +100,18 @@ public class Client {
                 }
             }
         }
+    }
+    public static void main(String[] args) throws Throwable {
+        Client client = new Client();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setPort(9090);
+        clientConfig.setServerAddr("localhost");
+        client.setClientConfig(clientConfig);
+        RpcReference rpcReference = client.startClientApplication();
+        DataService dataService = rpcReference.get(DataService.class);
+//        for(int i=0;i<100;i++){
+        String result = dataService.sendData("test");
+            System.out.println(result);
+//        }
     }
 }

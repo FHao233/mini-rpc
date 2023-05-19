@@ -1,6 +1,7 @@
 package com.fhao.rpc.core.common;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import static com.fhao.rpc.core.common.constants.RpcConstants.MAGIC_NUMBER;
 
@@ -40,6 +41,15 @@ public class RpcProtocol implements Serializable {
 
     public void setContent(byte[] content) {
         this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return "RpcProtocol{" +
+                "magicNumber=" + magicNumber +
+                ", contentLength=" + contentLength +
+                ", content=" + Arrays.toString(content) +
+                '}';
     }
 }
 

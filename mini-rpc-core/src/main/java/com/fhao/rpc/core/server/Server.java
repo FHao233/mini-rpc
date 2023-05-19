@@ -1,5 +1,6 @@
 package com.fhao.rpc.core.server;
 
+import com.fhao.rpc.core.common.RpcProtocolCodec;
 import com.fhao.rpc.core.common.config.ServerConfig;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -8,7 +9,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
+import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
 /**
  * author: FHao
  * create time: 2023-04-26 15:11
@@ -17,6 +18,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 public class Server {
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
+    RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
+
     private ServerConfig serverConfig;
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -41,7 +44,8 @@ public class Server {
                 System.out.println("初始化provider过程");
 //                ch.pipeline().addLast(new RpcEncoder());
 //                ch.pipeline().addLast(new RpcDecoder());
-//                ch.pipeline().addLast(new ServerHandler());
+                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+                ch.pipeline().addLast(new ServerHandler());
             }
 
         });
@@ -57,7 +61,7 @@ public class Server {
         }
         Class interfaceClass = classes[0];
         //需要注册的对象统一放在一个MAP集合中进行管理
-//        PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
+        PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
     }
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
