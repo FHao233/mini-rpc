@@ -22,43 +22,44 @@ import static com.fhao.rpc.core.common.cache.CommonClientCache.CONNECT_MAP;
  * <p>create time: 2023-05-19 13:48</p>
  * <p>description:   </p>
  */
+//这个监听器的作用是用来监听服务端的服务列表变化的
 public class ServiceUpdateListener implements IRpcListener<IRpcUpdateEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUpdateListener.class);
 
     @Override
-    public void callBack(Object t) {
+    public void callBack(Object t) { //这个回调函数的参数是一个IRpcUpdateEvent类型的对象
         //获取到字节点的数据信息
-        URLChangeWrapper urlChangeWrapper = (URLChangeWrapper) t;
-        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(urlChangeWrapper.getServiceName());
+        URLChangeWrapper urlChangeWrapper = (URLChangeWrapper) t; //这个t是一个IRpcUpdateEvent类型的对象
+        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(urlChangeWrapper.getServiceName()); //这个CONNECT_MAP是一个Map<String, List<ChannelFutureWrapper>>类型的对象
         if (CommonUtils.isEmptyList(channelFutureWrappers)) {
             LOGGER.error("[ServiceUpdateListener] channelFutureWrappers is empty");
             return;
         } else {
-            List<String> matchProviderUrl = urlChangeWrapper.getProviderUrl();
-            Set<String> finalUrl = new HashSet<>();
-            List<ChannelFutureWrapper> finalChannelFutureWrappers = new ArrayList<>();
-            for (ChannelFutureWrapper channelFutureWrapper : channelFutureWrappers) {
-                String oldServerAddress = channelFutureWrapper.getHost() + ":" + channelFutureWrapper.getPort();
+            List<String> matchProviderUrl = urlChangeWrapper.getProviderUrl();//获取提供服务的地址，这个地址是一个List<String>类型的对象
+            Set<String> finalUrl = new HashSet<>();//创建一个保存最终url的Set<String>类型的对象
+            List<ChannelFutureWrapper> finalChannelFutureWrappers = new ArrayList<>();//创建一个保存最终channelFutureWrappers的List<ChannelFutureWrapper>类型的对象
+            for (ChannelFutureWrapper channelFutureWrapper : channelFutureWrappers) {//遍历map中的channelFutureWrappers
+                String oldServerAddress = channelFutureWrapper.getHost() + ":" + channelFutureWrapper.getPort();//获取到老的url
                 //如果老的url没有，说明已经被移除了
-                if (!matchProviderUrl.contains(oldServerAddress)) {
+                if (!matchProviderUrl.contains(oldServerAddress)) { //如果matchProviderUrl中不包含oldServerAddress，说明其已经下线了
                     continue;
                 } else {
-                    finalChannelFutureWrappers.add(channelFutureWrapper);
-                    finalUrl.add(oldServerAddress);
+                    finalChannelFutureWrappers.add(channelFutureWrapper);//如果matchProviderUrl中包含oldServerAddress，说明其还在线，将其加入到finalChannelFutureWrappers中
+                    finalUrl.add(oldServerAddress);//将其加入到finalUrl中
                 }
             }
             //此时老的url已经被移除了，开始检查是否有新的url
             List<ChannelFutureWrapper> newChannelFutureWrapper = new ArrayList<>();
-            for (String newProviderUrl : matchProviderUrl) {
-                if (!finalUrl.contains(newProviderUrl)) {
-                    ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper();
-                    String host = newProviderUrl.split(":")[0];
-                    Integer port = Integer.valueOf(newProviderUrl.split(":")[1]);
+            for (String newProviderUrl : matchProviderUrl) {//遍历matchProviderUrl
+                if (!finalUrl.contains(newProviderUrl)) {//如果finalUrl中不包含newProviderUrl，说明其是新的url
+                    ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper();//创建一个ChannelFutureWrapper类型的对象
+                    String host = newProviderUrl.split(":")[0];//获取到host
+                    Integer port = Integer.valueOf(newProviderUrl.split(":")[1]);//获取到port
                     channelFutureWrapper.setPort(port);
                     channelFutureWrapper.setHost(host);
                     ChannelFuture channelFuture = null;
                     try {
-                        channelFuture = ConnectionHandler.createChannelFuture(host,port);
+                        channelFuture = ConnectionHandler.createChannelFuture(host,port);//创建一个ChannelFuture类型的对象
                         channelFutureWrapper.setChannelFuture(channelFuture);
                         newChannelFutureWrapper.add(channelFutureWrapper);
                         finalUrl.add(newProviderUrl);

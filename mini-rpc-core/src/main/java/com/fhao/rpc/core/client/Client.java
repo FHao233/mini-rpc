@@ -86,7 +86,6 @@ public class Client {
 
     /**
      * 启动服务之前需要预先订阅对应的dubbo服务
-     *
      * @param serviceBean
      */
     public void doSubscribeService(Class serviceBean) {
@@ -107,7 +106,7 @@ public class Client {
             List<String> providerIps = abstractRegister.getProviderIps(providerServiceName);
             for (String providerIp : providerIps) {
                 try {
-                    ConnectionHandler.connect(providerServiceName, providerIp);
+                    ConnectionHandler.connect(providerServiceName, providerIp);//建立连接
                 } catch (InterruptedException e) {
                     logger.error("[doConnectServer] connect fail ", e);
                 }
@@ -139,11 +138,11 @@ public class Client {
             while (true) {
                 try {
                     //阻塞模式
-                    RpcInvocation data = SEND_QUEUE.take();
-                    String json = JSON.toJSONString(data);
-                    RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
-                    channelFuture.channel().writeAndFlush(rpcProtocol);
+                    RpcInvocation data = SEND_QUEUE.take(); //从队列中取出数据
+                    String json = JSON.toJSONString(data); //序列化
+                    RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());//封装成rpc协议
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());//获取channel
+                    channelFuture.channel().writeAndFlush(rpcProtocol);//发送数据
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -154,11 +153,11 @@ public class Client {
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
         RpcReference rpcReference = client.initClientApplication();
-        DataService dataService = rpcReference.get(DataService.class);
-        client.doSubscribeService(DataService.class);
-        ConnectionHandler.setBootstrap(client.getBootstrap());
+        DataService dataService = rpcReference.get(DataService.class);//获取代理对象
+        client.doSubscribeService(DataService.class); //订阅服务
+        ConnectionHandler.setBootstrap(client.getBootstrap()); //设置bootstrap
 
-        client.doConnectServer();
+        client.doConnectServer();//建立连接
         client.startClient();
         for (int i = 0; i < 100; i++) {
             try {

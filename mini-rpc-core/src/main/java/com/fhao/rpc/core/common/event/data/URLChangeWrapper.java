@@ -7,10 +7,12 @@ import java.util.List;
  * <p>create time: 2023-05-19 13:45</p>
  * <p>description:   </p>
  */
-public class URLChangeWrapper {
-    private String serviceName;
 
-    private List<String> providerUrl;
+    //这个类是用来封装一个服务的名称和这个服务的提供者的URL的
+public class URLChangeWrapper {
+    private String serviceName;//服务的名称
+
+    private List<String> providerUrl;//服务的提供者的URL
 
     public String getServiceName() {
         return serviceName;

@@ -37,9 +37,9 @@ public class CommonUtils {
     }
 
 
-    public static String getIpAddress() {
+    public static String getIpAddress() { //获取本机ip
         try {
-            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();//获取网卡
             InetAddress ip = null;
             while (allNetInterfaces.hasMoreElements()) {
                 NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();

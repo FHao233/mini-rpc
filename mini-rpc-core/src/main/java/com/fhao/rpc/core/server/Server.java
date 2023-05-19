@@ -26,9 +26,7 @@ public class Server {
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
     RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
-
     private ServerConfig serverConfig;
-
     private RegistryService registryService;
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -102,7 +100,7 @@ public class Server {
         PROVIDER_URL_SET.add(url);
     }
 
-    public void batchExportUrl(){
+    public void batchExportUrl(){ //这个函数的内部设计就是为了将服务端的具体服务都暴露到注册中心，方便客户端进行调用。
         Thread task = new Thread(new Runnable() {
             @Override
             public void run() {

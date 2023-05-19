@@ -96,7 +96,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
                 urlChangeWrapper.setServiceName(path.split("/")[2]);
                 //自定义的一套事件监听组件
                 IRpcEvent iRpcEvent = new IRpcUpdateEvent(urlChangeWrapper);  //创建一个 IRpcUpdateEvent 对象，将URLChangeWrapper 作为参数，用于触发自定义的事件监听组件。
-                IRpcListenerLoader.sendEvent(iRpcEvent);//通过 IRpcListenerLoader.sendEvent(iRpcEvent) 发送事件。
+                IRpcListenerLoader.sendEvent(iRpcEvent);//将事件发送出去，这样就能触发监听器中的事件处理方法了。
                 //收到回调之后在注册一次监听，这样能保证一直都收到消息
                 watchChildNodeData(path);
             }

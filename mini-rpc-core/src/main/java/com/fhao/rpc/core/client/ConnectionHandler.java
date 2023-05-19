@@ -44,21 +44,21 @@ public class ConnectionHandler {
         if(!providerIp.contains(":")){
             return;
         }
-        String[] providerAddress = providerIp.split(":");
-        String ip = providerAddress[0];
+        String[] providerAddress = providerIp.split(":");//这个providerAddress里面有两个元素，一个是ip，一个是port
+        String ip = providerAddress[0];//ip
         Integer port = Integer.parseInt(providerAddress[1]);
         //到底这个channelFuture里面是什么
-        ChannelFuture channelFuture = bootstrap.connect(ip, port).sync();
+        ChannelFuture channelFuture = bootstrap.connect(ip, port).sync();//返回的是一个ChannelFuture对象
         ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper();
         channelFutureWrapper.setChannelFuture(channelFuture);
         channelFutureWrapper.setHost(ip);
         channelFutureWrapper.setPort(port);
         SERVER_ADDRESS.add(providerIp);
-        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
-        if (CommonUtils.isEmptyList(channelFutureWrappers)) {
+        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);//获取到这个seviceName对应的ChannelFutureWrapper列表
+        if (CommonUtils.isEmptyList(channelFutureWrappers)) {//如果这个列表是空的，那么就新建一个列表
             channelFutureWrappers = new ArrayList<>();
         }
-        channelFutureWrappers.add(channelFutureWrapper);
+        channelFutureWrappers.add(channelFutureWrapper);//将新的服务提供者的ChannelFutureWrapper对象加入到这个列表中
         CONNECT_MAP.put(providerServiceName, channelFutureWrappers);
     }
 
@@ -96,7 +96,6 @@ public class ConnectionHandler {
 
     /**
      * 默认走随机策略获取ChannelFuture
-     *
      * @param providerServiceName
      * @return
      */

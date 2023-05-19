@@ -5,6 +5,8 @@ package com.fhao.rpc.core.common.event;
  * <p>create time: 2023-05-19 13:46</p>
  * <p>description:   </p>
  */
+//这个接口的作用是什么？？？
+    //这个类的作用是定义一个事件，这个事件的数据是一个Object类型的对象
 public class IRpcUpdateEvent implements IRpcEvent{
     private Object data;
 
