@@ -1,10 +1,7 @@
 package com.fhao.rpc.core.client;
 
 import com.alibaba.fastjson.JSON;
-import com.fhao.rpc.core.RpcDecoder;
-import com.fhao.rpc.core.common.RpcEncoder;
-import com.fhao.rpc.core.common.RpcInvocation;
-import com.fhao.rpc.core.common.RpcProtocol;
+import com.fhao.rpc.core.common.*;
 import com.fhao.rpc.core.common.config.ClientConfig;
 import com.fhao.rpc.core.proxy.jdk.JDKProxyFactory;
 import io.netty.bootstrap.Bootstrap;
@@ -28,13 +25,17 @@ public class Client {
     private Logger logger = LoggerFactory.getLogger(Client.class);
     public static EventLoopGroup clientGroup = new NioEventLoopGroup();
     private ClientConfig clientConfig;
+
     public ClientConfig getClientConfig() {
         return clientConfig;
     }
 
+    RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
+
     public void setClientConfig(ClientConfig clientConfig) {
         this.clientConfig = clientConfig;
     }
+
     public RpcReference startClientApplication() throws InterruptedException {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
@@ -44,8 +45,9 @@ public class Client {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 //管道中初始化一些逻辑，这里包含了上边所说的编解码器和客户端响应类
-                ch.pipeline().addLast(new RpcEncoder());
-                ch.pipeline().addLast(new RpcDecoder());
+//                ch.pipeline().addLast(new RpcEncoder());
+//                ch.pipeline().addLast(new RpcDecoder());
+                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
                 ch.pipeline().addLast(new ClientHandler());
             }
         });
@@ -57,17 +59,19 @@ public class Client {
         RpcReference rpcReference = new RpcReference(new JDKProxyFactory());
         return rpcReference;
     }
+
     /**
      * 开启发送线程，专门从事将数据包发送给服务端，起到一个解耦的效果
+     *
      * @param channelFuture
      */
     private void startClient(ChannelFuture channelFuture) {
         Thread asyncSendJob = new Thread(new AsyncSendJob(channelFuture));
         asyncSendJob.start();
     }
+
     /**
      * 异步发送信息任务
-     *
      */
     class AsyncSendJob implements Runnable {
 
@@ -86,7 +90,6 @@ public class Client {
                     //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了上文中的ServerHandler
                     String json = JSON.toJSONString(data);
                     RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());
-
                     //netty的通道负责发送数据给服务端
                     channelFuture.channel().writeAndFlush(rpcProtocol);
                 } catch (InterruptedException e) {

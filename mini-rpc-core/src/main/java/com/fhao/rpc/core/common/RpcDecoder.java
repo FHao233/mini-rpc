@@ -1,4 +1,4 @@
-package com.fhao.rpc.core;
+package com.fhao.rpc.core.common;
 
 import com.fhao.rpc.core.common.RpcProtocol;
 import io.netty.buffer.ByteBuf;
@@ -24,12 +24,13 @@ public class RpcDecoder extends ByteToMessageDecoder {
         if(byteBuf.readableBytes() >= BASE_LENGTH){
                 //防止收到一些体积过大的数据包
             if (byteBuf.readableBytes() > 1000) {
+                //这里需要重置下读索引，否则会导致内存泄漏
                 byteBuf.skipBytes(byteBuf.readableBytes());
             }
-            int beginReader;
+            int beginReader;//记录包头开始的index
             while (true) {
-                beginReader = byteBuf.readerIndex();
-                byteBuf.markReaderIndex();
+                beginReader = byteBuf.readerIndex();//记录包头开始的index
+                byteBuf.markReaderIndex();//标记包头开始的index
                 //这里对应了RpcProtocol的魔数
                 if (byteBuf.readShort() == MAGIC_NUMBER) {
                     break;
@@ -41,7 +42,8 @@ public class RpcDecoder extends ByteToMessageDecoder {
             }
             //这里对应了RpcProtocol对象的contentLength字段
             int length = byteBuf.readInt();
-            //说明剩余的数据包不是完整的，这里需要重置下读索引
+            //说明剩余的数据包不是完整的，这里需要重置下读索引，等待下一次的数据包到来
+            // ，这里需要注意的是，这里的读索引是从上面的while循环中标记的
             if (byteBuf.readableBytes() < length) {
                 byteBuf.readerIndex(beginReader);
                 return;

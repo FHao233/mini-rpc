@@ -16,28 +16,30 @@ import static com.fhao.rpc.core.common.cache.CommonClientCache.SEND_QUEUE;
  * <p>description:  各种代理工厂统一使用这个InvocationHandler </p>
  */
 public class JDKClientInvocationHandler implements InvocationHandler {
+    // 用于占位，防止缓存中的key为null
     private final static Object OBJECT = new Object();
-
+    // 代理的接口
     private Class<?> clazz;
-
+    // 代理的接口的实现类
     public JDKClientInvocationHandler(Class<?> clazz) {
         this.clazz = clazz;
     }
-
+    // 通过代理对象调用方法时，会调用这个方法
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        RpcInvocation rpcInvocation = new RpcInvocation();
-        rpcInvocation.setArgs(args);
-        rpcInvocation.setTargetMethod(method.getName());
-        rpcInvocation.setTargetServiceName(clazz.getName());
-        rpcInvocation.setUuid(UUID.randomUUID().toString());
-        RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);
-        SEND_QUEUE.add(rpcInvocation);
-        long beginTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - beginTime < 3*1000) {
+
+        RpcInvocation rpcInvocation = new RpcInvocation();// 封装请求信息
+        rpcInvocation.setArgs(args);// 请求参数
+        rpcInvocation.setTargetMethod(method.getName());// 请求方法名
+        rpcInvocation.setTargetServiceName(clazz.getName());// 请求接口名
+        rpcInvocation.setUuid(UUID.randomUUID().toString()); //这里面注入了一个uuid，对每一次的请求都做单独区分
+        RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);// 先占位
+        SEND_QUEUE.add(rpcInvocation);// 将请求信息放入队列中
+        long beginTime = System.currentTimeMillis();// 记录开始时间
+        while (System.currentTimeMillis() - beginTime < 3*1000) {//
             Object object = RESP_MAP.get(rpcInvocation.getUuid());
-            if (object instanceof RpcInvocation) {
-                return ((RpcInvocation)object).getResponse();
+            if (object instanceof RpcInvocation) {// 如果是RpcInvocation说明服务端返回结果
+                return ((RpcInvocation)object).getResponse();// 返回结果
             }
         }
         throw new TimeoutException("client wait server's response timeout!");

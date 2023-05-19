@@ -9,9 +9,12 @@ import java.lang.reflect.Proxy;
  * <p>create time: 2023-04-26 19:32</p>
  * <p>description:   </p>
  */
+
 public class JDKProxyFactory implements ProxyFactory {
+    // 通过JDK动态代理获取代理对象
     @Override
     public <T> T getProxy(final Class clazz) throws Throwable {
+        // 通过JDK动态代理获取代理对象
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 new JDKClientInvocationHandler(clazz));
     }

@@ -18,15 +18,15 @@ import static com.fhao.rpc.core.common.cache.CommonClientCache.RESP_MAP;
 public class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        RpcProtocol rpcProtocol = (RpcProtocol) msg;
-        byte[] reqContent = rpcProtocol.getContent();
-        String json = new String(reqContent,0,reqContent.length);
-        RpcInvocation rpcInvocation = JSON.parseObject(json,RpcInvocation.class);
-        if(!RESP_MAP.containsKey(rpcInvocation.getUuid())){
+        RpcProtocol rpcProtocol = (RpcProtocol) msg;//这里的msg就是RpcProtocol对象
+        byte[] reqContent = rpcProtocol.getContent();//获取RpcProtocol对象的内容
+        String json = new String(reqContent,0,reqContent.length);//将内容转换成json
+        RpcInvocation rpcInvocation = JSON.parseObject(json,RpcInvocation.class);//将json转换成RpcInvocation对象
+        if(!RESP_MAP.containsKey(rpcInvocation.getUuid())){//如果客户端缓存中没有对应的请求对象，则抛出异常
             throw new IllegalArgumentException("server response is error!");
         }
-        RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);
-        ReferenceCountUtil.release(msg);
+        RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);//将RpcInvocation对象存入客户端缓存
+        ReferenceCountUtil.release(msg);//释放资源
     }
 
     @Override
