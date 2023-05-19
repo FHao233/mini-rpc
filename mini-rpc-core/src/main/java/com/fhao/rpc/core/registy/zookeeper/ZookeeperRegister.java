@@ -17,6 +17,7 @@ import java.util.List;
  * <p>create time: 2023-05-19 13:37</p>
  * <p>description:   </p>
  */
+//主要负责的功能是对Zookeeper完成服务注册，服务订阅，服务下线等相关实际操作
 public class ZookeeperRegister extends AbstractRegister implements RegistryService {
     private AbstractZookeeperClient zkClient;
     private String ROOT = "/irpc";
@@ -50,7 +51,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
         if (!zkClient.existNode(getProviderPath(url))) {
             zkClient.createTemporaryData(getProviderPath(url), urlStr);
         } else {
-            zkClient.deleteNode(getProviderPath(url));
+            zkClient.deleteNode(getProviderPath(url));//
             zkClient.createTemporaryData(getProviderPath(url), urlStr);
         }
         super.register(url);
@@ -85,7 +86,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
     public void watchChildNodeData(String newServerNodePath){
         zkClient.watchChildNodeData(newServerNodePath, new Watcher() {
             @Override
-            public void process(WatchedEvent watchedEvent) {
+            public void process(WatchedEvent watchedEvent) { //当子节点数据发生变化时会触发该方法。
                 System.out.println(watchedEvent);
                 String path = watchedEvent.getPath();
                 List<String> childrenDataList = zkClient.getChildrenData(path);
@@ -94,8 +95,8 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
                 urlChangeWrapper.setProviderUrl(childrenDataList);
                 urlChangeWrapper.setServiceName(path.split("/")[2]);
                 //自定义的一套事件监听组件
-                IRpcEvent iRpcEvent = new IRpcUpdateEvent(urlChangeWrapper);
-                IRpcListenerLoader.sendEvent(iRpcEvent);
+                IRpcEvent iRpcEvent = new IRpcUpdateEvent(urlChangeWrapper);  //创建一个 IRpcUpdateEvent 对象，将URLChangeWrapper 作为参数，用于触发自定义的事件监听组件。
+                IRpcListenerLoader.sendEvent(iRpcEvent);//通过 IRpcListenerLoader.sendEvent(iRpcEvent) 发送事件。
                 //收到回调之后在注册一次监听，这样能保证一直都收到消息
                 watchChildNodeData(path);
             }

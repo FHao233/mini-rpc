@@ -31,7 +31,7 @@ public class IRpcListenerLoader {
     /**
      * 获取接口上的泛型T
      *
-     * @param o     接口
+     * @param o  接口
      */
     public static Class<?> getInterfaceT(Object o) {
         Type[] types = o.getClass().getGenericInterfaces();

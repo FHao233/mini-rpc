@@ -1,5 +1,7 @@
 package com.fhao.rpc.core.registy;
 
+import com.fhao.rpc.core.registy.zookeeper.ProviderNodeInfo;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +11,7 @@ import java.util.Map;
  * <p>create time: 2023-05-19 13:19</p>
  * <p>description:   </p>
  */
+//这个类用来保存rpc的重要属性，例如封装了服务提供者的ip和port
 public class URL {
     /**
      * 服务应用名称
@@ -82,18 +85,18 @@ public class URL {
     }
 
 
-//    /**
-//     * 将某个节点下的信息转换为一个Provider节点对象
-//     *
-//     * @param providerNodeStr
-//     * @return
-//     */
-//    public static ProviderNodeInfo buildURLFromUrlStr(String providerNodeStr) {
-//        String[] items = providerNodeStr.split("/");
-//        ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
-//        providerNodeInfo.setServiceName(items[2]);
-//        providerNodeInfo.setAddress(items[4]);
-//        return providerNodeInfo;
-//    }
+    /**
+     * 将某个节点下的信息转换为一个Provider节点对象
+     *
+     * @param providerNodeStr
+     * @return
+     */
+    public static ProviderNodeInfo buildURLFromUrlStr(String providerNodeStr) {
+        String[] items = providerNodeStr.split("/");
+        ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
+        providerNodeInfo.setServiceName(items[2]);
+        providerNodeInfo.setAddress(items[4]);
+        return providerNodeInfo;
+    }
 
 }

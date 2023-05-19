@@ -10,9 +10,10 @@ import java.util.List;
  * <p>description:   </p>
  */
 public abstract class AbstractZookeeperClient {
-    private String zkAddress;
-    private int baseSleepTimes;
-    private int maxRetryTimes;
+
+    private String zkAddress;//保存zk的地址
+    private int baseSleepTimes;//客户端睡眠时间
+    private int maxRetryTimes;//客户端重试次数
     public AbstractZookeeperClient(String zkAddress) {
         this.zkAddress = zkAddress;
         //默认3000ms
@@ -79,6 +80,7 @@ public abstract class AbstractZookeeperClient {
     public abstract void createPersistentData(String address, String data);
 
     /**
+     * 创建持久顺序节点
      * @param address
      * @param data
      */

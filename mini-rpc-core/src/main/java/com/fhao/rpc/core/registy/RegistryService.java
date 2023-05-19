@@ -3,7 +3,7 @@ package com.fhao.rpc.core.registy;
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-05-19 13:19</p>
- * <p>description:   </p>
+ * <p>description: 注册中心功能  </p>
  */
 public interface RegistryService {
     /**

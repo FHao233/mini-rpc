@@ -13,6 +13,8 @@ import java.util.Set;
  * <p>description:   </p>
  */
 public class CommonServerCache {
+    //用于存储提供者类的名称和实例
     public static final Map<String,Object> PROVIDER_CLASS_MAP = new HashMap<>();
+    //用于存储提供者的URL地址
     public static final Set<URL> PROVIDER_URL_SET = new HashSet<>();
 }

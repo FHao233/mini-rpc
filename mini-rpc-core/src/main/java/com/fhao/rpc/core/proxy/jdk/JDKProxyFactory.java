@@ -13,7 +13,7 @@ import java.lang.reflect.Proxy;
 public class JDKProxyFactory implements ProxyFactory {
     // 通过JDK动态代理获取代理对象
     @Override
-    public <T> T getProxy(final Class clazz) throws Throwable {
+    public <T> T getProxy(final Class<T> clazz) throws Throwable {
         // 通过JDK动态代理获取代理对象
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 new JDKClientInvocationHandler(clazz));

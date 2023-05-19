@@ -13,8 +13,10 @@ import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
  * <p>create time: 2023-05-19 13:23</p>
  * <p>description:   </p>
  */
+//抽象注册类
 public abstract class AbstractRegister implements RegistryService {
     @Override
+    //注册到集合中
     public void register(URL url) {
         PROVIDER_URL_SET.add(url);
     }

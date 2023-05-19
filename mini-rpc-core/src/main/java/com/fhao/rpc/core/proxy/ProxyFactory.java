@@ -7,5 +7,5 @@ package com.fhao.rpc.core.proxy;
  */
 
 public interface ProxyFactory {
-    <T> T getProxy(final Class clazz) throws Throwable;
+    <T> T getProxy(final Class<T> clazz) throws Throwable;
 }
