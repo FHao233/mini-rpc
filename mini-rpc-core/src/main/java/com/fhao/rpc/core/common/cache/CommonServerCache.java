@@ -1,6 +1,7 @@
 package com.fhao.rpc.core.common.cache;
 
 import com.fhao.rpc.core.registy.URL;
+import com.fhao.rpc.core.serialize.SerializeFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,4 +18,5 @@ public class CommonServerCache {
     public static final Map<String,Object> PROVIDER_CLASS_MAP = new HashMap<>();
     //用于存储提供者的URL地址
     public static final Set<URL> PROVIDER_URL_SET = new HashSet<>();
+    public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 }

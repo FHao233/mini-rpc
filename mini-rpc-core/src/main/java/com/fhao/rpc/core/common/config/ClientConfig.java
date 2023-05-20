@@ -13,6 +13,15 @@ public class ClientConfig {
      * 代理类型 example: jdk,javassist
      */
     private String proxyType;
+    private String clientSerialize;
+
+    public String getClientSerialize() {
+        return clientSerialize;
+    }
+
+    public void setClientSerialize(String clientSerialize) {
+        this.clientSerialize = clientSerialize;
+    }
 
     public String getRouterStrategy() {
         return routerStrategy;

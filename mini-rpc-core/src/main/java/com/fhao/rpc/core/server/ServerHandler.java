@@ -13,6 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
 
 /**
  * <p>author: FHao</p>
@@ -27,9 +28,8 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         //服务端接收数据的时候统一以RpcProtocol协议的格式接收，具体的发送逻辑见文章下方客户端发送部分
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
         //这里的CONTENT_LENGTH_FIELD_OFFSET和CONTENT_LENGTH_FIELD_LENGTH对应的是RpcProtocol对象的contentLength字段
-        String json = new String(rpcProtocol.getContent(), 0, rpcProtocol.getContentLength());
-        //将json转换成RpcInvocation对象
-        RpcInvocation rpcInvocation = JSON.parseObject(json, RpcInvocation.class);
+        RpcInvocation rpcInvocation =SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(),RpcInvocation.class);
+
         //这里的PROVIDER_CLASS_MAP就是一开始预先在启动时候存储的Bean集合
         //根据目标服务名称找到对应的目标对象
         Object aimObject = PROVIDER_CLASS_MAP.get(rpcInvocation.getTargetServiceName());
@@ -50,7 +50,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             }
         }
         rpcInvocation.setResponse(result);
-        RpcProtocol respRpcProtocol = new RpcProtocol(JSON.toJSONString(rpcInvocation).getBytes());
+        RpcProtocol respRpcProtocol = new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInvocation));
         ctx.writeAndFlush(respRpcProtocol);
     }
     @Override

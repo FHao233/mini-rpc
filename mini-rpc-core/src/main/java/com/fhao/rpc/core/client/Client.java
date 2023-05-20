@@ -13,6 +13,8 @@ import com.fhao.rpc.core.registy.zookeeper.AbstractRegister;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
 import com.fhao.rpc.core.router.RandomRouterImpl;
 import com.fhao.rpc.core.router.RotateRouterImpl;
+import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
+import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
 import com.fhao.rpc.interfaces.DataService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -31,6 +33,7 @@ import java.util.List;
 import static com.fhao.rpc.core.common.cache.CommonClientCache.SEND_QUEUE;
 import static com.fhao.rpc.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
 import static com.fhao.rpc.core.common.cache.CommonClientCache.IROUTER;
+import static com.fhao.rpc.core.common.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
 import static com.fhao.rpc.core.common.constants.RpcConstants.*;
 
 /**
@@ -115,6 +118,18 @@ public class Client {
         } else if (ROTATE_ROUTER_TYPE.equals(routerStrategy)) {
             IROUTER = new RotateRouterImpl();
         }
+        String clientSerialize = clientConfig.getClientSerialize();
+        switch (clientSerialize){
+            case JDK_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " + clientSerialize);
+        }
+        logger.debug("the client serialize type is {}", clientSerialize);
     }
 
     /**
@@ -159,8 +174,9 @@ public class Client {
                 try {
                     //阻塞模式
                     RpcInvocation data = SEND_QUEUE.take(); //从队列中取出数据
-                    String json = JSON.toJSONString(data); //序列化
-                    RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());//封装成rpc协议
+
+//                    String json = JSON.toJSONString(data); //序列化
+                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));//封装成rpc协议
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());//获取channel
                     channelFuture.channel().writeAndFlush(rpcProtocol);//发送数据
                 } catch (Exception e) {

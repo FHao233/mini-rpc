@@ -1,11 +1,14 @@
 package com.fhao.rpc.core.common;
 
+import java.io.Serializable;
+
 /**
  * author: FHao
  * create time: 2023-04-26 15:33
  * description:
  */
-public class RpcInvocation {
+public class RpcInvocation implements Serializable {
+    private static final long serialVersionUID = -3611379458492006176L;
     //请求的目标方法，例如findUser
     private String targetMethod;
     //请求的目标服务名称，例如：com.sise.user.UserService

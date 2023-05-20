@@ -11,6 +11,16 @@ public class ServerConfig {
     private String registerAddr;
     private String applicationName;
 
+    private String serverSerialize;
+
+    public String getServerSerialize() {
+        return serverSerialize;
+    }
+
+    public void setServerSerialize(String serverSerialize) {
+        this.serverSerialize = serverSerialize;
+    }
+
     public String getRegisterAddr() {
         return registerAddr;
     }

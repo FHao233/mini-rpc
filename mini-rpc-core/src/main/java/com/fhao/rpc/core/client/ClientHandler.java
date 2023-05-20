@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 
+import static com.fhao.rpc.core.common.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
 import static com.fhao.rpc.core.common.cache.CommonClientCache.RESP_MAP;
 
 /**
@@ -19,9 +20,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         RpcProtocol rpcProtocol = (RpcProtocol) msg;//这里的msg就是RpcProtocol对象
-        byte[] reqContent = rpcProtocol.getContent();//获取RpcProtocol对象的内容
-        String json = new String(reqContent,0,reqContent.length);//将内容转换成json
-        RpcInvocation rpcInvocation = JSON.parseObject(json,RpcInvocation.class);//将json转换成RpcInvocation对象
+        RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(), RpcInvocation.class);
         if(!RESP_MAP.containsKey(rpcInvocation.getUuid())){//如果客户端缓存中没有对应的请求对象，则抛出异常
             throw new IllegalArgumentException("server response is error!");
         }

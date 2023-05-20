@@ -6,6 +6,7 @@ import com.fhao.rpc.core.common.config.ClientConfig;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.router.ChannelFuturePollingRef;
 import com.fhao.rpc.core.router.IRouter;
+import com.fhao.rpc.core.serialize.SerializeFactory;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,4 +35,5 @@ public class CommonClientCache {
     public static Map<String, ChannelFutureWrapper[]> SERVICE_ROUTER_MAP = new ConcurrentHashMap<>();
     public static ChannelFuturePollingRef CHANNEL_FUTURE_POLLING_REF = new ChannelFuturePollingRef();
     public static IRouter IROUTER;
+    public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 }

@@ -14,4 +14,8 @@ public class RpcConstants {
     public static final String RANDOM_ROUTER_TYPE = "random";
 
     public static final String ROTATE_ROUTER_TYPE = "rotate";
+
+    public static final String JDK_SERIALIZE_TYPE = "jdk";
+
+    public static final String FAST_JSON_SERIALIZE_TYPE = "fastJson";
 }

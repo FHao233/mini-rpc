@@ -6,6 +6,8 @@ import com.fhao.rpc.core.common.utils.CommonUtils;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
+import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
+import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -14,8 +16,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import com.fhao.rpc.core.common.config.PropertiesBootstrap;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
 import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
+import static com.fhao.rpc.core.common.constants.RpcConstants.FAST_JSON_SERIALIZE_TYPE;
+import static com.fhao.rpc.core.common.constants.RpcConstants.JDK_SERIALIZE_TYPE;
 
 /**
  * author: FHao
@@ -23,6 +31,7 @@ import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
  * description:
  */
 public class Server {
+    Logger logger = LoggerFactory.getLogger(Server.class);
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
     RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
@@ -49,8 +58,6 @@ public class Server {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
-//                ch.pipeline().addLast(new RpcEncoder());
-//                ch.pipeline().addLast(new RpcDecoder());
                 ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
                 ch.pipeline().addLast(new ServerHandler());
             }
@@ -119,6 +126,18 @@ public class Server {
     public void initServerConfig() {
         ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
         this.setServerConfig(serverConfig);
+        String serverSerialize = serverConfig.getServerSerialize();
+        switch (serverSerialize){
+            case JDK_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " + serverSerialize);
+        }
+        logger.debug("the server serialize type is {}", serverSerialize);
     }
 
     public static void main(String[] args) throws InterruptedException {
