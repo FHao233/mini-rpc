@@ -1,6 +1,8 @@
 package com.fhao.rpc.core.common;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * author: FHao
@@ -19,6 +21,15 @@ public class RpcInvocation implements Serializable {
     private String uuid;
     //接口响应的数据塞入这个字段中（如果是异步调用或者void类型，这里就为空）
     private Object response;
+    private Map<String, Object> attachments = new ConcurrentHashMap<>();
+
+    public Map<String, Object> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(Map<String, Object> attachments) {
+        this.attachments = attachments;
+    }
 
     public String getTargetMethod() {
         return targetMethod;

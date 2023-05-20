@@ -12,7 +12,9 @@ import com.fhao.rpc.interfaces.DataService;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>author: FHao</p>
@@ -46,6 +48,17 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
     public List<String> getProviderIps(String serviceName) {
         List<String> nodeDataList = this.zkClient.getChildrenData(ROOT + "/" + serviceName + "/provider");
         return nodeDataList;
+    }
+
+    @Override
+    public Map<String, String> getServiceWeightMap(String serviceName) {
+        List<String> nodeDataList = this.zkClient.getChildrenData(ROOT + "/" + serviceName + "/provider");
+        Map<String, String> result = new HashMap<>();
+        for (String ipAndHost : nodeDataList) {
+            String childData = this.zkClient.getNodeData(ROOT + "/" + serviceName + "/provider/" + ipAndHost);
+            result.put(ipAndHost, childData);
+        }
+        return result;
     }
 
     @Override
@@ -109,7 +122,6 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
             public void process(WatchedEvent watchedEvent) {
                 String path = watchedEvent.getPath();
                 String nodeData = zkClient.getNodeData(path);
-                nodeData = nodeData.replace(";","/");
                 ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(nodeData);
                 IRpcEvent iRpcEvent = new IRpcNodeChangeEvent(providerNodeInfo);
                 IRpcListenerLoader.sendEvent(iRpcEvent);

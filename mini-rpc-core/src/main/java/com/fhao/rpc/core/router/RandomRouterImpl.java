@@ -29,6 +29,10 @@ public class RandomRouterImpl implements IRouter{
             arr[i] = channelFutureWrappers.get(result[i]);
         }
         SERVICE_ROUTER_MAP.put(selector.getProviderServiceName(), arr);
+        URL url = new URL();
+        url.setServiceName(selector.getProviderServiceName());
+        //更新权重
+        IROUTER.updateWeight(url);
     }
 
     private int[] createRandomIndex(int len) {
@@ -56,7 +60,7 @@ public class RandomRouterImpl implements IRouter{
 
     @Override
     public ChannelFutureWrapper select(Selector selector) {
-        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrapper(selector.getProviderServiceName());
+        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrapper(selector.getChannelFutureWrappers());
     }
 
     @Override

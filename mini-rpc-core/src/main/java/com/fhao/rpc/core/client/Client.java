@@ -6,6 +6,10 @@ import com.fhao.rpc.core.common.config.ClientConfig;
 import com.fhao.rpc.core.common.config.PropertiesBootstrap;
 import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
+import com.fhao.rpc.core.filter.client.ClientFilterChain;
+import com.fhao.rpc.core.filter.client.ClientLogFilterImpl;
+import com.fhao.rpc.core.filter.client.DirectInvokeFilterImpl;
+import com.fhao.rpc.core.filter.client.GroupFilterImpl;
 import com.fhao.rpc.core.proxy.javassist.JavassistProxyFactory;
 import com.fhao.rpc.core.proxy.jdk.JDKProxyFactory;
 import com.fhao.rpc.core.registy.URL;
@@ -15,6 +19,7 @@ import com.fhao.rpc.core.router.RandomRouterImpl;
 import com.fhao.rpc.core.router.RotateRouterImpl;
 import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
 import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
+import com.fhao.rpc.core.server.DataServiceImpl;
 import com.fhao.rpc.interfaces.DataService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -29,11 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
-import static com.fhao.rpc.core.common.cache.CommonClientCache.SEND_QUEUE;
-import static com.fhao.rpc.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
-import static com.fhao.rpc.core.common.cache.CommonClientCache.IROUTER;
-import static com.fhao.rpc.core.common.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
+import static com.fhao.rpc.core.common.cache.CommonClientCache.*;
 import static com.fhao.rpc.core.common.constants.RpcConstants.*;
 
 /**
@@ -75,13 +78,16 @@ public class Client {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(LOGGING_HANDLER);
-                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+                ch.pipeline().addLast(new RpcDecoder());
+                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ClientHandler());
             }
         });
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
         this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
+        CLIENT_CONFIG = this.clientConfig;
         RpcReference rpcReference;
         if (JAVASSIST_PROXY_TYPE.equals(clientConfig.getProxyType())) {
             rpcReference = new RpcReference(new JavassistProxyFactory());
@@ -93,6 +99,7 @@ public class Client {
 
     /**
      * 启动服务之前需要预先订阅对应的dubbo服务
+     *
      * @param serviceBean
      */
     public void doSubscribeService(Class serviceBean) {
@@ -103,6 +110,8 @@ public class Client {
         url.setApplicationName(clientConfig.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
+        Map<String, String> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
+        URL_MAP.put(serviceBean.getName(), result);
         abstractRegister.subscribe(url);
     }
 
@@ -113,13 +122,18 @@ public class Client {
     private void initClientConfig() {
         //初始化路由策略
         String routerStrategy = clientConfig.getRouterStrategy();
-        if (RANDOM_ROUTER_TYPE.equals(routerStrategy)) {
-            IROUTER = new RandomRouterImpl();
-        } else if (ROTATE_ROUTER_TYPE.equals(routerStrategy)) {
-            IROUTER = new RotateRouterImpl();
+        switch (routerStrategy) {
+            case RANDOM_ROUTER_TYPE:
+                IROUTER = new RandomRouterImpl();
+                break;
+            case ROTATE_ROUTER_TYPE:
+                IROUTER = new RotateRouterImpl();
+                break;
+            default:
+                throw new RuntimeException("no match routerStrategy for" + routerStrategy);
         }
         String clientSerialize = clientConfig.getClientSerialize();
-        switch (clientSerialize){
+        switch (clientSerialize) {
             case JDK_SERIALIZE_TYPE:
                 CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
                 break;
@@ -130,6 +144,11 @@ public class Client {
                 throw new RuntimeException("no match serialize type for " + clientSerialize);
         }
         logger.debug("the client serialize type is {}", clientSerialize);
+        ClientFilterChain clientFilterChain = new ClientFilterChain();
+        clientFilterChain.addClientFilter(new ClientLogFilterImpl());
+        clientFilterChain.addClientFilter(new DirectInvokeFilterImpl());
+        clientFilterChain.addClientFilter(new GroupFilterImpl());
+        CLIENT_FILTER_CHAIN = clientFilterChain;
     }
 
     /**
@@ -146,7 +165,7 @@ public class Client {
                 }
             }
             URL url = new URL();
-            url.addParameter("servicePath",providerURL.getServiceName()+"/provider");
+            url.addParameter("servicePath", providerURL.getServiceName() + "/provider");
             url.addParameter("providerIps", JSON.toJSONString(providerIps));
             //客户端在此新增一个订阅的功能
             abstractRegister.doAfterSubscribe(url);
@@ -174,10 +193,8 @@ public class Client {
                 try {
                     //阻塞模式
                     RpcInvocation data = SEND_QUEUE.take(); //从队列中取出数据
-
-//                    String json = JSON.toJSONString(data); //序列化
                     RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));//封装成rpc协议
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());//获取channel
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);//获取channel
                     channelFuture.channel().writeAndFlush(rpcProtocol);//发送数据
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -190,7 +207,12 @@ public class Client {
         Client client = new Client();
         RpcReference rpcReference = client.initClientApplication();
         client.initClientConfig();
-        DataService dataService = rpcReference.get(DataService.class);//获取代理对象
+        RpcReferenceWrapper<DataService> rpcReferenceWrapper = new RpcReferenceWrapper<>();
+        rpcReferenceWrapper.setAimClass(DataService.class);
+        rpcReferenceWrapper.setGroup("dev");
+        rpcReferenceWrapper.setServiceToken("token-a");
+
+        DataService dataService = rpcReference.get(rpcReferenceWrapper);//获取代理对象
         client.doSubscribeService(DataService.class); //订阅服务
         ConnectionHandler.setBootstrap(client.getBootstrap()); //设置bootstrap
 
@@ -201,7 +223,7 @@ public class Client {
                 String result = dataService.sendData("test");
                 System.out.println(result);
                 Thread.sleep(1000);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

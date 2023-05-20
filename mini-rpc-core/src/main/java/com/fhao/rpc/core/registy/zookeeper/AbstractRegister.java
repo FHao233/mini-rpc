@@ -4,6 +4,7 @@ import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.fhao.rpc.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
 import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
@@ -57,6 +58,12 @@ public abstract class AbstractRegister implements RegistryService {
      */
     public abstract List<String> getProviderIps(String serviceName);
 
-
+    /**
+     * 获取服务的权重信息
+     *
+     * @param serviceName
+     * @return <ip:port --> urlString>,<ip:port --> urlString>,<ip:port --> urlString>,<ip:port --> urlString>
+     */
+    public abstract Map<String, String> getServiceWeightMap(String serviceName);
 
 }

@@ -6,11 +6,31 @@ package com.fhao.rpc.core.registy.zookeeper;
  * <p>description:   </p>
  */
 public class ProviderNodeInfo {
+    private String applicationName;
     private String serviceName;
 
     private String address;
 
     private String registryTime;
+
+    private Integer weight;
+    private String group;
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
 
     public String getRegistryTime() {
         return registryTime;
@@ -20,7 +40,7 @@ public class ProviderNodeInfo {
         this.registryTime = registryTime;
     }
 
-    private Integer weight;
+
 
     public Integer getWeight() {
         return weight;
@@ -49,8 +69,12 @@ public class ProviderNodeInfo {
     @Override
     public String toString() {
         return "ProviderNodeInfo{" +
-                "serviceName='" + serviceName + '\'' +
+                "applicationName='" + applicationName + '\'' +
+                ", serviceName='" + serviceName + '\'' +
                 ", address='" + address + '\'' +
+                ", registryTime='" + registryTime + '\'' +
+                ", weight=" + weight +
+                ", group='" + group + '\'' +
                 '}';
     }
 }

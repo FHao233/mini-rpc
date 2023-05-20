@@ -1,5 +1,7 @@
 package com.fhao.rpc.core.common.event;
 
+import com.fhao.rpc.core.common.event.listener.ProviderNodeDataChangeListener;
+import com.fhao.rpc.core.common.event.listener.ServiceDestroyListener;
 import com.fhao.rpc.core.common.event.listener.ServiceUpdateListener;
 import com.fhao.rpc.core.common.utils.CommonUtils;
 
@@ -27,6 +29,8 @@ public class IRpcListenerLoader {
 
     public void init() {
         registerListener(new ServiceUpdateListener());
+        registerListener(new ServiceDestroyListener());
+        registerListener(new ProviderNodeDataChangeListener());
     }//将IRpcListener的实现类注册到iRpcListenerList中
 
     /**
@@ -61,6 +65,27 @@ public class IRpcListenerLoader {
                         }
                     }
                 });
+            }
+        }
+    }
+    /**
+     * 同步事件处理，可能会堵塞
+     *
+     * @param iRpcEvent
+     */
+    public static void sendSyncEvent(IRpcEvent iRpcEvent) {
+        System.out.println(iRpcListenerList);
+        if (CommonUtils.isEmptyList(iRpcListenerList)) {
+            return;
+        }
+        for (IRpcListener<?> iRpcListener : iRpcListenerList) {
+            Class<?> type = getInterfaceT(iRpcListener);
+            if (type.equals(iRpcEvent.getClass())) {
+                try {
+                    iRpcListener.callBack(iRpcEvent.getData());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

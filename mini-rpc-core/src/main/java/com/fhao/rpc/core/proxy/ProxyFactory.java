@@ -1,5 +1,7 @@
 package com.fhao.rpc.core.proxy;
 
+import com.fhao.rpc.core.client.RpcReferenceWrapper;
+
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-04-26 16:01</p>
@@ -7,5 +9,5 @@ package com.fhao.rpc.core.proxy;
  */
 
 public interface ProxyFactory {
-    <T> T getProxy(final Class<T> clazz) throws Throwable;
+    <T> T getProxy(RpcReferenceWrapper rpcReferenceWrapper) throws Throwable;
 }

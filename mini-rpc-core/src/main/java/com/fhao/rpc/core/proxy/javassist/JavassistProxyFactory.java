@@ -1,5 +1,6 @@
 package com.fhao.rpc.core.proxy.javassist;
 
+import com.fhao.rpc.core.client.RpcReferenceWrapper;
 import com.fhao.rpc.core.proxy.ProxyFactory;
 
 /**
@@ -9,9 +10,9 @@ import com.fhao.rpc.core.proxy.ProxyFactory;
  */
 public class JavassistProxyFactory implements ProxyFactory {
     @Override
-    public <T> T getProxy(Class<T> clazz) throws Throwable {
+    public <T> T getProxy(RpcReferenceWrapper rpcReferenceWrapper) throws Throwable {
 
         return (T) ProxyGenerator.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                clazz, new JavassistInvocationHandler(clazz));
+                rpcReferenceWrapper.getAimClass(), new JavassistInvocationHandler(rpcReferenceWrapper));
     }
 }

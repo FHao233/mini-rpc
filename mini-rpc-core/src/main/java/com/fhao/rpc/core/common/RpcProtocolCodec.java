@@ -29,7 +29,6 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) throws Exception {
-
         if (byteBuf.readableBytes() >= BASE_LENGTH) {
             //防止收到一些体积过大的数据包
             if (byteBuf.readableBytes() > 1000) {

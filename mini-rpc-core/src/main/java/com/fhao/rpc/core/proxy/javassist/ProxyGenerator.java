@@ -4,16 +4,12 @@ import javassist.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * <p>author: FHao</p>
- * <p>create time: 2023-05-19 12:48</p>
- * <p>description:   </p>
- */
 public class ProxyGenerator {
 
     private static final AtomicInteger counter = new AtomicInteger(1);

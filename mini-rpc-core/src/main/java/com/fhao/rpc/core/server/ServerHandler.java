@@ -12,8 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
-import static com.fhao.rpc.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
 
 /**
  * <p>author: FHao</p>
@@ -29,6 +28,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
         //这里的CONTENT_LENGTH_FIELD_OFFSET和CONTENT_LENGTH_FIELD_LENGTH对应的是RpcProtocol对象的contentLength字段
         RpcInvocation rpcInvocation =SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(),RpcInvocation.class);
+        SERVER_FILTER_CHAIN.doFilter(rpcInvocation);
 
         //这里的PROVIDER_CLASS_MAP就是一开始预先在启动时候存储的Bean集合
         //根据目标服务名称找到对应的目标对象

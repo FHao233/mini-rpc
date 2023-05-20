@@ -1,8 +1,14 @@
 package com.fhao.rpc.core.server;
 
+import com.fhao.rpc.core.common.RpcDecoder;
+import com.fhao.rpc.core.common.RpcEncoder;
 import com.fhao.rpc.core.common.RpcProtocolCodec;
 import com.fhao.rpc.core.common.config.ServerConfig;
+import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
+import com.fhao.rpc.core.filter.server.ServerFilterChain;
+import com.fhao.rpc.core.filter.server.ServerLogFilterImpl;
+import com.fhao.rpc.core.filter.server.ServerTokenFilterImpl;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
@@ -19,9 +25,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
-import static com.fhao.rpc.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
-import static com.fhao.rpc.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
 import static com.fhao.rpc.core.common.constants.RpcConstants.FAST_JSON_SERIALIZE_TYPE;
 import static com.fhao.rpc.core.common.constants.RpcConstants.JDK_SERIALIZE_TYPE;
 
@@ -35,6 +39,8 @@ public class Server {
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
     RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
+
+    private static IRpcListenerLoader iRpcListenerLoader;
     private ServerConfig serverConfig;
     private RegistryService registryService;
     public ServerConfig getServerConfig() {
@@ -58,13 +64,14 @@ public class Server {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
-                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+                ch.pipeline().addLast(new RpcDecoder());
+                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ServerHandler());
             }
 
         });
         this.batchExportUrl();
-
         bootstrap.bind(serverConfig.getServerPort()).sync();
 }
     public void registyService(Object serviceBean){
@@ -83,9 +90,10 @@ public class Server {
     /**
      * 暴露服务信息
      *
-     * @param serviceBean
+     * @param serviceWrapper
      */
-    public void exportService(Object serviceBean) {
+    public void exportService(ServiceWrapper serviceWrapper) {
+        Object serviceBean = serviceWrapper.getServiceObj();
         if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
@@ -104,7 +112,12 @@ public class Server {
         url.setApplicationName(serverConfig.getApplicationName());
         url.addParameter("host", CommonUtils.getIpAddress());
         url.addParameter("port", String.valueOf(serverConfig.getServerPort()));
+        url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
+        url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
+        if (CommonUtils.isNotEmpty(serviceWrapper.getServiceToken())) {
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
+        }
     }
 
     public void batchExportUrl(){ //这个函数的内部设计就是为了将服务端的具体服务都暴露到注册中心，方便客户端进行调用。
@@ -138,12 +151,26 @@ public class Server {
                 throw new RuntimeException("no match serialize type for " + serverSerialize);
         }
         logger.debug("the server serialize type is {}", serverSerialize);
+        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        serverFilterChain.addServerFilter(new ServerLogFilterImpl()).addServerFilter(new ServerTokenFilterImpl()).addServerFilter(new ServerTokenFilterImpl());
+        SERVER_FILTER_CHAIN = serverFilterChain;
     }
 
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
         server.initServerConfig();
-        server.exportService(new DataServiceImpl());
+
+        iRpcListenerLoader = new IRpcListenerLoader();
+        iRpcListenerLoader.init();
+        ServiceWrapper dataServiceServiceWrapper = new ServiceWrapper(new DataServiceImpl(), "dev");
+        dataServiceServiceWrapper.setServiceToken("token-a");
+        dataServiceServiceWrapper.setLimit(2);
+        ServiceWrapper userServiceServiceWrapper = new ServiceWrapper(new UserServiceImpl(), "dev");
+        userServiceServiceWrapper.setServiceToken("token-b");
+        userServiceServiceWrapper.setLimit(2);
+        server.exportService(dataServiceServiceWrapper);
+        server.exportService(userServiceServiceWrapper);
+        ApplicationShutdownHook.registryShutdownHook();
         server.startApplication();
     }
 }
