@@ -11,6 +11,8 @@ import com.fhao.rpc.core.proxy.jdk.JDKProxyFactory;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.AbstractRegister;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
+import com.fhao.rpc.core.router.RandomRouterImpl;
+import com.fhao.rpc.core.router.RotateRouterImpl;
 import com.fhao.rpc.interfaces.DataService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -28,6 +30,8 @@ import java.util.List;
 
 import static com.fhao.rpc.core.common.cache.CommonClientCache.SEND_QUEUE;
 import static com.fhao.rpc.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
+import static com.fhao.rpc.core.common.cache.CommonClientCache.IROUTER;
+import static com.fhao.rpc.core.common.constants.RpcConstants.*;
 
 /**
  * <p>author: FHao</p>
@@ -76,7 +80,7 @@ public class Client {
         iRpcListenerLoader.init();
         this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
         RpcReference rpcReference;
-        if ("javassist".equals(clientConfig.getProxyType())) {
+        if (JAVASSIST_PROXY_TYPE.equals(clientConfig.getProxyType())) {
             rpcReference = new RpcReference(new JavassistProxyFactory());
         } else {
             rpcReference = new RpcReference(new JDKProxyFactory());
@@ -98,21 +102,37 @@ public class Client {
         url.addParameter("host", CommonUtils.getIpAddress());
         abstractRegister.subscribe(url);
     }
+
+    /**
+     * todo
+     * 后续可以考虑加入spi
+     */
+    private void initClientConfig() {
+        //初始化路由策略
+        String routerStrategy = clientConfig.getRouterStrategy();
+        if (RANDOM_ROUTER_TYPE.equals(routerStrategy)) {
+            IROUTER = new RandomRouterImpl();
+        } else if (ROTATE_ROUTER_TYPE.equals(routerStrategy)) {
+            IROUTER = new RotateRouterImpl();
+        }
+    }
+
     /**
      * 开始和各个provider建立连接
      */
     public void doConnectServer() {
-        for (String providerServiceName : SUBSCRIBE_SERVICE_LIST) {
-            List<String> providerIps = abstractRegister.getProviderIps(providerServiceName);
+        for (URL providerURL : SUBSCRIBE_SERVICE_LIST) {
+            List<String> providerIps = abstractRegister.getProviderIps(providerURL.getServiceName());
             for (String providerIp : providerIps) {
                 try {
-                    ConnectionHandler.connect(providerServiceName, providerIp);//建立连接
+                    ConnectionHandler.connect(providerURL.getServiceName(), providerIp);//建立连接
                 } catch (InterruptedException e) {
                     logger.error("[doConnectServer] connect fail ", e);
                 }
             }
             URL url = new URL();
-            url.setServiceName(providerServiceName);
+            url.addParameter("servicePath",providerURL.getServiceName()+"/provider");
+            url.addParameter("providerIps", JSON.toJSONString(providerIps));
             //客户端在此新增一个订阅的功能
             abstractRegister.doAfterSubscribe(url);
         }
@@ -153,6 +173,7 @@ public class Client {
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
         RpcReference rpcReference = client.initClientApplication();
+        client.initClientConfig();
         DataService dataService = rpcReference.get(DataService.class);//获取代理对象
         client.doSubscribeService(DataService.class); //订阅服务
         ConnectionHandler.setBootstrap(client.getBootstrap()); //设置bootstrap

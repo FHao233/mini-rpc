@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
  * <p>create time: 2023-05-19 13:47</p>
  * <p>description:   </p>
  */
-    //这个类的作用是将IRpcListener的实现类注册到iRpcListenerList中，然后通过sendEvent方法将事件发送给iRpcListenerList中的所有IRpcListener的实现类
+//这个类的作用是将IRpcListener的实现类注册到iRpcListenerList中，然后通过sendEvent方法将事件发送给iRpcListenerList中的所有IRpcListener的实现类
 public class IRpcListenerLoader {
     private static List<IRpcListener> iRpcListenerList = new ArrayList<>();//这个list中存放的是IRpcListener的实现类
 
