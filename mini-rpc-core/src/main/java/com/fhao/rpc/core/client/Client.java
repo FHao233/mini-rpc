@@ -85,7 +85,7 @@ public class Client {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(new ProcotolFrameDecoder());
-//                ch.pipeline().addLast(LOGGING_HANDLER);
+                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
 //                ch.pipeline().addLast(new RpcDecoder());
 //                ch.pipeline().addLast(new RpcEncoder());
@@ -117,7 +117,7 @@ public class Client {
                 EXTENSION_LOADER.loadExtension(RegistryService.class);
                 Map<String, Class> registerMap = EXTENSION_LOADER_CLASS_CACHE.get(RegistryService.class.getName());
                 Class registerClass =  registerMap.get(clientConfig.getRegisterType());
-                ABSTRACT_REGISTER = (AbstractRegister) registerClass.getDeclaredConstructor().newInstance();
+                ABSTRACT_REGISTER = (AbstractRegister) registerClass.newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("registryServiceType unKnow,error is ", e);
             }
@@ -230,7 +230,8 @@ public class Client {
         rpcReferenceWrapper.setAimClass(DataService.class);
         rpcReferenceWrapper.setGroup("dev");
         rpcReferenceWrapper.setServiceToken("token-a");
-
+        rpcReferenceWrapper.setTimeOut(3000);
+        rpcReferenceWrapper.setAsync(false);
         DataService dataService = rpcReference.get(rpcReferenceWrapper);//获取代理对象
         client.doSubscribeService(DataService.class); //订阅服务
         ConnectionHandler.setBootstrap(client.getBootstrap()); //设置bootstrap

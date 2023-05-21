@@ -18,4 +18,10 @@ public class RpcConstants {
     public static final String JDK_SERIALIZE_TYPE = "jdk";
 
     public static final String FAST_JSON_SERIALIZE_TYPE = "fastJson";
+
+    public static final Integer DEFAULT_TIMEOUT = 3000;
+
+    public static final Integer DEFAULT_THREAD_NUMS = 256;
+
+    public static final Integer DEFAULT_QUEUE_SIZE = 512;
 }

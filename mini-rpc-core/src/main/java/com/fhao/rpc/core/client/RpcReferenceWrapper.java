@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-05-20 20:24</p>
- * <p>description:   </p>
+ * <p>description: rpc远程调用包装类  </p>
  */
 public class RpcReferenceWrapper <T>{
     private Class<T> aimClass;
@@ -26,6 +26,13 @@ public class RpcReferenceWrapper <T>{
 
     public void setAsync(boolean async){
         this.attatchments.put("async",async);
+    }
+
+    public String getTimeOUt() {
+        return String.valueOf(attatchments.get("timeOut"));
+    }
+    public void setTimeOut(int timeOut) {
+        attatchments.put("timeOut", timeOut);
     }
 
     public String getUrl(){

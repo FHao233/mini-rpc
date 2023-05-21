@@ -25,6 +25,20 @@ public class ClientConfig {
 
     private String registerType;
 
+
+    /**
+     * 客户端发数据的超时时间
+     */
+    private Integer timeOut;
+
+    public Integer getTimeOut() {
+        return timeOut;
+    }
+
+    public void setTimeOut(Integer timeOut) {
+        this.timeOut = timeOut;
+    }
+
     public String getRegisterType() {
         return registerType;
     }

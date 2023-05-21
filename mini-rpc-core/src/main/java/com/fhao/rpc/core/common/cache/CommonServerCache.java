@@ -1,6 +1,7 @@
 package com.fhao.rpc.core.common.cache;
 
 import com.fhao.rpc.core.common.config.ServerConfig;
+import com.fhao.rpc.core.dispatcher.ServerChannelDispatcher;
 import com.fhao.rpc.core.filter.server.ServerFilterChain;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
@@ -33,4 +34,7 @@ public class CommonServerCache {
 
     public static ServerConfig SERVER_CONFIG;
     public static Boolean IS_STARTED = false;
+
+    public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
+
 }

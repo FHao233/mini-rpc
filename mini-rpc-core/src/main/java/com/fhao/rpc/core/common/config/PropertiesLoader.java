@@ -4,6 +4,7 @@ import com.fhao.rpc.core.common.utils.CommonUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -18,18 +19,15 @@ public class PropertiesLoader {
     private static Properties properties;
 
     private static Map<String, String> propertiesMap = new HashMap<>();
+    private static String DEFAULT_PROPERTIES_FILE = "irpc.properties";
 
-    private static String DEFAULT_PROPERTIES_FILE = Objects.requireNonNull(PropertiesLoader.class.getResource("/")).getPath() + "irpc.properties";
-//            "E:\\IdeaProjects\\mini-rpc\\mini-rpc-core\\src\\main\\resources\\irpc.properties";
 
-    //todo 如果这里直接使用static修饰是否可以？
     public static void loadConfiguration() throws IOException {
-        if(properties!=null){
+        if (properties != null) {
             return;
         }
         properties = new Properties();
-        FileInputStream in = null;
-        in = new FileInputStream(DEFAULT_PROPERTIES_FILE);
+        InputStream in = PropertiesLoader.class.getClassLoader().getResourceAsStream(DEFAULT_PROPERTIES_FILE);
         properties.load(in);
     }
 
@@ -71,6 +69,52 @@ public class PropertiesLoader {
             propertiesMap.put(key, value);
         }
         return Integer.valueOf(propertiesMap.get(key));
+    }
+
+    public static String getPropertiesStrDefault(String key, String defaultVal) {
+        if (properties == null) {
+            return defaultVal;
+        }
+        if (CommonUtils.isEmpty(key)) {
+            return defaultVal;
+        }
+
+        String val = getPropertiesStr(key);
+        if (val == null || val.equals("") ) {
+            propertiesMap.put(key, String.valueOf(defaultVal));
+            return defaultVal;
+        }
+        if (!propertiesMap.containsKey(key)) {
+            String value = properties.getProperty(key);
+            propertiesMap.put(key, value);
+        }
+        return  String.valueOf(propertiesMap.get(key));
+    }
+
+    public static Integer getPropertiesIntegerDefault(String key, Integer defaultVal) {
+        if (properties == null) {
+            return defaultVal;
+        }
+        if (CommonUtils.isEmpty(key)) {
+            return defaultVal;
+        }
+        String value = properties.getProperty(key);
+        if (value == null) {
+            propertiesMap.put(key, String.valueOf(defaultVal));
+            return defaultVal;
+        }
+        if (!propertiesMap.containsKey(key)) {
+            propertiesMap.put(key, value);
+        }
+        return Integer.valueOf(propertiesMap.get(key));
+    }
+
+    public static String getPropertiesNotBlank(String key) {
+        String val = getPropertiesStr(key);
+        if (val == null || val.equals("")) {
+            throw new IllegalArgumentException(key + " 配置为空异常");
+        }
+        return val;
     }
 
     public static void main(String[] args) {

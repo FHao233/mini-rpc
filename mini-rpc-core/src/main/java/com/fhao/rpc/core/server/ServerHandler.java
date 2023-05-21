@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.fhao.rpc.core.common.RpcInvocation;
 import com.fhao.rpc.core.common.RpcProtocol;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -20,38 +21,16 @@ import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
  * <p>description:   </p>
  */
 //服务端接收数据的Handler
+@ChannelHandler.Sharable
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     Logger logger = LoggerFactory.getLogger(ServerHandler.class);
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws InvocationTargetException, IllegalAccessException {
-        //服务端接收数据的时候统一以RpcProtocol协议的格式接收，具体的发送逻辑见文章下方客户端发送部分
-        RpcProtocol rpcProtocol = (RpcProtocol) msg;
-        //这里的CONTENT_LENGTH_FIELD_OFFSET和CONTENT_LENGTH_FIELD_LENGTH对应的是RpcProtocol对象的contentLength字段
-        RpcInvocation rpcInvocation =SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(),RpcInvocation.class);
-        SERVER_FILTER_CHAIN.doFilter(rpcInvocation);
+        ServerChannelReadData serverChannelReadData = new ServerChannelReadData();
+        serverChannelReadData.setChannelHandlerContext(ctx);
+        serverChannelReadData.setRpcProtocol((RpcProtocol) msg);
+        SERVER_CHANNEL_DISPATCHER.add(serverChannelReadData);
 
-        //这里的PROVIDER_CLASS_MAP就是一开始预先在启动时候存储的Bean集合
-        //根据目标服务名称找到对应的目标对象
-        Object aimObject = PROVIDER_CLASS_MAP.get(rpcInvocation.getTargetServiceName());
-        //通过反射找到目标对象的目标方法
-        Method[] methods = aimObject.getClass().getDeclaredMethods();
-        //这里的rpcInvocation.getTargetMethod()就是客户端发送过来的目标方法名称
-        Object result = null;
-        for (Method method : methods) {//遍历目标对象的所有方法
-            //找到目标方法
-            if(method.getName().equals(rpcInvocation.getTargetMethod())){
-                // 通过反射找到目标对象，然后执行目标方法并返回对应值
-                if (method.getReturnType().equals(Void.TYPE)) {
-                    method.invoke(aimObject, rpcInvocation.getArgs());
-                }else {
-                    result = method.invoke(aimObject, rpcInvocation.getArgs());
-                }
-                break;
-            }
-        }
-        rpcInvocation.setResponse(result);
-        RpcProtocol respRpcProtocol = new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInvocation));
-        ctx.writeAndFlush(respRpcProtocol);
     }
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

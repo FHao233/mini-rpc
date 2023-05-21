@@ -21,6 +21,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         RpcProtocol rpcProtocol = (RpcProtocol) msg;//这里的msg就是RpcProtocol对象
         RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(), RpcInvocation.class);
+        //如果是单纯异步模式的话，响应Map集合中不会存在映射值
+        Object r = rpcInvocation.getAttachments().get("async");
+        if(r!=null && Boolean.parseBoolean(String.valueOf(r))){
+            ReferenceCountUtil.release(msg);
+            return;
+        }
         if(!RESP_MAP.containsKey(rpcInvocation.getUuid())){//如果客户端缓存中没有对应的请求对象，则抛出异常
             throw new IllegalArgumentException("server response is error!");
         }

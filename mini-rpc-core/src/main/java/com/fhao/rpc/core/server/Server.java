@@ -7,12 +7,14 @@ import com.fhao.rpc.core.common.RpcProtocolCodec;
 import com.fhao.rpc.core.common.config.ServerConfig;
 import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
+import com.fhao.rpc.core.filter.IServerFilter;
 import com.fhao.rpc.core.filter.server.ServerFilterChain;
 import com.fhao.rpc.core.filter.server.ServerLogFilterImpl;
 import com.fhao.rpc.core.filter.server.ServerTokenFilterImpl;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
+import com.fhao.rpc.core.serialize.SerializeFactory;
 import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
 import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -28,9 +30,15 @@ import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedHashMap;
+
+import static com.fhao.rpc.core.common.cache.CommonClientCache.EXTENSION_LOADER;
 import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
 import static com.fhao.rpc.core.common.constants.RpcConstants.FAST_JSON_SERIALIZE_TYPE;
 import static com.fhao.rpc.core.common.constants.RpcConstants.JDK_SERIALIZE_TYPE;
+import static com.fhao.rpc.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * author: FHao
@@ -46,12 +54,15 @@ public class Server {
     private static IRpcListenerLoader iRpcListenerLoader;
     private ServerConfig serverConfig;
     private RegistryService registryService;
+
     public ServerConfig getServerConfig() {
         return serverConfig;
     }
+
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
+
     public void startApplication() throws InterruptedException {
         bossGroup = new NioEventLoopGroup();
         workerGroup = new NioEventLoopGroup();
@@ -68,7 +79,7 @@ public class Server {
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
                 ch.pipeline().addLast(new ProcotolFrameDecoder());
-//                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
                 ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
 //                ch.pipeline().addLast(new RpcDecoder());
 //                ch.pipeline().addLast(new RpcEncoder());
@@ -78,14 +89,16 @@ public class Server {
         });
         this.batchExportUrl();
         bootstrap.bind(serverConfig.getServerPort()).sync();
+        SERVER_CHANNEL_DISPATCHER.startDataConsume();//开始准备接收请求的任务
         IS_STARTED = true;
     }
-    public void registyService(Object serviceBean){
-        if(serviceBean.getClass().getInterfaces().length==0){
+
+    public void registyService(Object serviceBean) {
+        if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
         Class[] classes = serviceBean.getClass().getInterfaces();
-        if(classes.length>1){
+        if (classes.length > 1) {
             throw new RuntimeException("service must only had one interfaces!");
         }
         Class interfaceClass = classes[0];
@@ -126,7 +139,7 @@ public class Server {
         }
     }
 
-    public void batchExportUrl(){ //这个函数的内部设计就是为了将服务端的具体服务都暴露到注册中心，方便客户端进行调用。
+    public void batchExportUrl() { //这个函数的内部设计就是为了将服务端的具体服务都暴露到注册中心，方便客户端进行调用。
         Thread task = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -142,30 +155,40 @@ public class Server {
         });
         task.start();
     }
-    public void initServerConfig() {
+
+    public void initServerConfig() throws Exception {
         ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
         this.setServerConfig(serverConfig);
+        SERVER_CONFIG = serverConfig;
+        //初始化线程池和队列的配置
+        SERVER_CHANNEL_DISPATCHER.init(SERVER_CONFIG.getServerQueueSize(), SERVER_CONFIG.getServerBizThreadNums());
+        //序列化技术初始化
         String serverSerialize = serverConfig.getServerSerialize();
-        switch (serverSerialize){
-            case JDK_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for " + serverSerialize);
+        EXTENSION_LOADER.loadExtension(SerializeFactory.class);
+        LinkedHashMap<String, Class> serializeFactoryClassMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
+        Class serializeFactoryClass = serializeFactoryClassMap.get(serverSerialize);
+        logger.debug("the client serialize type is {}", serverSerialize);
+        if (serializeFactoryClass == null) {
+            throw new RuntimeException("no match serialize type for " + serverSerialize);
         }
-        logger.debug("the server serialize type is {}", serverSerialize);
+        SERVER_SERIALIZE_FACTORY = (SerializeFactory) serializeFactoryClass.getDeclaredConstructor().newInstance();
+        //过滤链技术初始化
+        EXTENSION_LOADER.loadExtension(IServerFilter.class);
+        LinkedHashMap<String, Class> iServerFilterClassMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
         ServerFilterChain serverFilterChain = new ServerFilterChain();
-        serverFilterChain.addServerFilter(new ServerLogFilterImpl()).addServerFilter(new ServerTokenFilterImpl()).addServerFilter(new ServerTokenFilterImpl());
+        for (String iServerFilterKey : iServerFilterClassMap.keySet()) {
+            Class iServerFilterClass = iServerFilterClassMap.get(iServerFilterKey);
+            if (iServerFilterClass == null) {
+                throw new RuntimeException("no match iServerFilter type for " + iServerFilterKey);
+            }
+            serverFilterChain.addServerFilter((IServerFilter) iServerFilterClass.getDeclaredConstructor().newInstance());
+        }
         SERVER_FILTER_CHAIN = serverFilterChain;
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
         Server server = new Server();
         server.initServerConfig();
-
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
         ServiceWrapper dataServiceServiceWrapper = new ServiceWrapper(new DataServiceImpl(), "dev");

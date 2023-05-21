@@ -3,6 +3,8 @@ package com.fhao.rpc.core.client;
 
 import com.fhao.rpc.core.proxy.ProxyFactory;
 
+import static com.fhao.rpc.core.common.cache.CommonClientCache.CLIENT_CONFIG;
+
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-04-26 16:00</p>
@@ -23,6 +25,17 @@ public class RpcReference {
      * @return
      */
     public <T> T get(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
+        initGlobalRpcReferenceWrapperConfig(rpcReferenceWrapper);
         return proxyFactory.getProxy(rpcReferenceWrapper);
+    }
+    /**
+     * 初始化远程调用的一些全局配置,例如超时
+     *
+     * @param rpcReferenceWrapper
+     */
+    private void initGlobalRpcReferenceWrapperConfig(RpcReferenceWrapper rpcReferenceWrapper) {
+        if (rpcReferenceWrapper.getTimeOUt() == null) {
+            rpcReferenceWrapper.setTimeOut(CLIENT_CONFIG.getTimeOut());
+        }
     }
 }
