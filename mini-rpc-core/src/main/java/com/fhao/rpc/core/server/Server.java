@@ -6,14 +6,12 @@ import com.fhao.rpc.core.common.RpcProtocolCodec;
 import com.fhao.rpc.core.common.config.ServerConfig;
 import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
+import com.fhao.rpc.core.filter.IServerFilter;
 import com.fhao.rpc.core.filter.server.ServerFilterChain;
-import com.fhao.rpc.core.filter.server.ServerLogFilterImpl;
-import com.fhao.rpc.core.filter.server.ServerTokenFilterImpl;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
-import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
-import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
+import com.fhao.rpc.core.serialize.SerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -25,7 +23,12 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import static com.fhao.rpc.core.common.cache.CommonClientCache.EXTENSION_LOADER;
 import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
+import static com.fhao.rpc.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 import static com.fhao.rpc.core.common.constants.RpcConstants.FAST_JSON_SERIALIZE_TYPE;
 import static com.fhao.rpc.core.common.constants.RpcConstants.JDK_SERIALIZE_TYPE;
 
@@ -64,9 +67,9 @@ public class Server {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
-//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
-                ch.pipeline().addLast(new RpcDecoder());
-                ch.pipeline().addLast(new RpcEncoder());
+                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+//                ch.pipeline().addLast(new RpcDecoder());
+//                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ServerHandler());
             }
 
@@ -136,27 +139,34 @@ public class Server {
         });
         task.start();
     }
-    public void initServerConfig() {
+    public void initServerConfig() throws Exception {
         ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
         this.setServerConfig(serverConfig);
+        //序列化技术初始化
         String serverSerialize = serverConfig.getServerSerialize();
-        switch (serverSerialize){
-            case JDK_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for " + serverSerialize);
+        EXTENSION_LOADER.loadExtension(SerializeFactory.class);
+        LinkedHashMap<String, Class> serializeFactoryClassMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
+        Class serializeFactoryClass = serializeFactoryClassMap.get(serverSerialize);
+        if (serializeFactoryClass == null) {
+            throw new RuntimeException("no match serialize type for" + serverSerialize);
         }
-        logger.debug("the server serialize type is {}", serverSerialize);
+
+        SERVER_SERIALIZE_FACTORY = (SerializeFactory) serializeFactoryClass.getDeclaredConstructor().newInstance();
+        //过滤链技术初始化
+        EXTENSION_LOADER.loadExtension(IServerFilter.class);
+        LinkedHashMap<String, Class> iServerFilterMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
         ServerFilterChain serverFilterChain = new ServerFilterChain();
-        serverFilterChain.addServerFilter(new ServerLogFilterImpl()).addServerFilter(new ServerTokenFilterImpl()).addServerFilter(new ServerTokenFilterImpl());
+        for (String iServerFilterKey : iServerFilterMap.keySet()) {
+            Class iServerFilter = iServerFilterMap.get(iServerFilterKey);
+            if(iServerFilter==null){
+                throw new RuntimeException("no match iServerFilter type for" + iServerFilterKey);
+            }
+            serverFilterChain.addServerFilter((IServerFilter) iServerFilter.getDeclaredConstructor().newInstance());
+        }
         SERVER_FILTER_CHAIN = serverFilterChain;
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
         Server server = new Server();
         server.initServerConfig();
 

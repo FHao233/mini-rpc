@@ -1,0 +1,2 @@
+jdk=com.fhao.rpc.core.proxy.jdk.JDKProxyFactory
+javassist=com.fhao.rpc.core.proxy.javassist.JavassistProxyFactory

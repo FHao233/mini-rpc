@@ -8,6 +8,7 @@ import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.common.ChannelFuturePollingRef;
 import com.fhao.rpc.core.router.IRouter;
 import com.fhao.rpc.core.serialize.SerializeFactory;
+import com.fhao.rpc.core.spi.ExtensionLoader;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -39,4 +40,6 @@ public class CommonClientCache {
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 
     public static ClientFilterChain CLIENT_FILTER_CHAIN;
+
+    public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
 }

@@ -10,6 +10,7 @@ import java.io.IOException;
 public class PropertiesBootstrap {
     private volatile boolean configIsReady;
 
+    public static final String REGISTER_TYPE = "irpc.registerType";
     public static final String SERVER_PORT = "irpc.serverPort";
     public static final String REGISTER_ADDRESS = "irpc.registerAddr";
     public static final String APPLICATION_NAME = "irpc.applicationName";
@@ -29,6 +30,7 @@ public class PropertiesBootstrap {
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         serverConfig.setServerSerialize(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE));
+        serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr("irpc.registerType"));
         return serverConfig;
     }
 
@@ -44,6 +46,7 @@ public class PropertiesBootstrap {
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
         clientConfig.setRouterStrategy(PropertiesLoader.getPropertiesStr(ROUTER_STRATEGY));
         clientConfig.setClientSerialize(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE));
+        clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         return clientConfig;
     }
 }

@@ -66,4 +66,5 @@ public class ServiceWrapper {
     public void setGroup(String group) {
         this.group = group;
     }
+
 }

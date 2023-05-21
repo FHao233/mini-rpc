@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -18,7 +19,8 @@ public class PropertiesLoader {
 
     private static Map<String, String> propertiesMap = new HashMap<>();
 
-    private static String DEFAULT_PROPERTIES_FILE = "E:\\IdeaProjects\\mini-rpc\\mini-rpc-core\\src\\main\\resources\\irpc.properties";
+    private static String DEFAULT_PROPERTIES_FILE = Objects.requireNonNull(PropertiesLoader.class.getResource("/")).getPath() + "irpc.properties";
+//            "E:\\IdeaProjects\\mini-rpc\\mini-rpc-core\\src\\main\\resources\\irpc.properties";
 
     //todo 如果这里直接使用static修饰是否可以？
     public static void loadConfiguration() throws IOException {
@@ -69,5 +71,10 @@ public class PropertiesLoader {
             propertiesMap.put(key, value);
         }
         return Integer.valueOf(propertiesMap.get(key));
+    }
+
+    public static void main(String[] args) {
+        String DEFAULT_PROPERTIES_FILE = PropertiesLoader.class.getResource("/").getPath() + "irpc.properties";
+        System.out.println(DEFAULT_PROPERTIES_FILE);
     }
 }

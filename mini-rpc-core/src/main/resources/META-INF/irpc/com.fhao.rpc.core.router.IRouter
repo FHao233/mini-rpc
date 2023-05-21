@@ -1,0 +1,2 @@
+rotate=com.fhao.rpc.core.router.RotateRouterImpl
+random=com.fhao.rpc.core.router.RandomRouterImpl

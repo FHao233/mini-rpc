@@ -1,0 +1,4 @@
+#kryo=com.fhao.rpc.core.serialize.kryo.KryoSerializeFactory
+jdk=com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory
+#hessian=com.fhao.rpc.core.serialize.hessian.HessianSerializeFactory
+fastJson=com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory

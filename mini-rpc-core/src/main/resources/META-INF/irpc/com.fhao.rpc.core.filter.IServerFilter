@@ -1,0 +1,2 @@
+serverLogFilterImpl=com.fhao.rpc.core.filter.server.ServerLogFilterImpl
+serverTokenFilterImpl=com.fhao.rpc.core.filter.server.ServerTokenFilterImpl

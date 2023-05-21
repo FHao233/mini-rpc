@@ -27,5 +27,6 @@ public class CommonServerCache {
     public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 
     public static ServerFilterChain SERVER_FILTER_CHAIN;
-    public static final Map<String, ServiceWrapper> PROVIDER_SERVICE_WRAPPER_MAP = new ConcurrentHashMap<>();
+    public static final Map<String, ServiceWrapper>
+            PROVIDER_SERVICE_WRAPPER_MAP = new ConcurrentHashMap<>();
 }

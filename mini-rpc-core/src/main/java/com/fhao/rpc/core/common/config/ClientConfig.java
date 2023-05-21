@@ -13,7 +13,25 @@ public class ClientConfig {
      * 代理类型 example: jdk,javassist
      */
     private String proxyType;
+
+    /**
+     * 序列化类型 example: json,jdk
+     */
     private String clientSerialize;
+    /**
+     * 负载均衡策略 example:random,rotate
+     */
+    private String routerStrategy;
+
+    private String registerType;
+
+    public String getRegisterType() {
+        return registerType;
+    }
+
+    public void setRegisterType(String registerType) {
+        this.registerType = registerType;
+    }
 
     public String getClientSerialize() {
         return clientSerialize;
@@ -31,10 +49,7 @@ public class ClientConfig {
         this.routerStrategy = routerStrategy;
     }
 
-    /**
-     * 负载均衡策略 example:random,rotate
-     */
-    private String routerStrategy;
+
     public String getProxyType() {
         return proxyType;
     }

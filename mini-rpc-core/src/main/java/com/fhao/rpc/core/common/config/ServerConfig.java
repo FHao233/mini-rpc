@@ -9,9 +9,20 @@ public class ServerConfig {
     private Integer serverPort;
 
     private String registerAddr;
+
     private String applicationName;
 
     private String serverSerialize;
+
+    private String registerType;
+
+    public String getRegisterType() {
+        return registerType;
+    }
+
+    public void setRegisterType(String registerType) {
+        this.registerType = registerType;
+    }
 
     public String getServerSerialize() {
         return serverSerialize;
