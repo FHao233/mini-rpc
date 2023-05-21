@@ -84,7 +84,8 @@ public class Client {
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(LOGGING_HANDLER);
+                ch.pipeline().addLast(new ProcotolFrameDecoder());
+//                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
 //                ch.pipeline().addLast(new RpcDecoder());
 //                ch.pipeline().addLast(new RpcEncoder());

@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.fhao.rpc.core.common.cache.CommonClientCache.CLIENT_CONFIG;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.SERVER_CONFIG;
+import static com.fhao.rpc.core.common.cache.CommonServerCache.IS_STARTED;
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-05-19 13:37</p>
@@ -38,6 +41,10 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
         this.zkClient = new CuratorZookeeperClient(address);
     }
 
+    public ZookeeperRegister() {
+        String registryAddr = CLIENT_CONFIG!= null ? CLIENT_CONFIG.getRegisterAddr() : SERVER_CONFIG.getRegisterAddr();
+        this.zkClient = new CuratorZookeeperClient(registryAddr);
+    }
 
     @Override
     public void doBeforeSubscribe(URL url) {
@@ -78,6 +85,9 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     @Override
     public void unRegister(URL url) {
+        if (!IS_STARTED) {
+            return;
+        }
         zkClient.deleteNode(getProviderPath(url));
         super.unRegister(url);
     }

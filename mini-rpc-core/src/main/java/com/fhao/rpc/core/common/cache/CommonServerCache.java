@@ -1,5 +1,6 @@
 package com.fhao.rpc.core.common.cache;
 
+import com.fhao.rpc.core.common.config.ServerConfig;
 import com.fhao.rpc.core.filter.server.ServerFilterChain;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
@@ -29,4 +30,7 @@ public class CommonServerCache {
     public static ServerFilterChain SERVER_FILTER_CHAIN;
     public static final Map<String, ServiceWrapper>
             PROVIDER_SERVICE_WRAPPER_MAP = new ConcurrentHashMap<>();
+
+    public static ServerConfig SERVER_CONFIG;
+    public static Boolean IS_STARTED = false;
 }

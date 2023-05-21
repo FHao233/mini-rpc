@@ -12,7 +12,7 @@ import static com.fhao.rpc.core.common.constants.RpcConstants.MAGIC_NUMBER;
 /**
  * <p>author: FHao</p>
  * <p>create time: 2023-05-19 10:47</p>
- * <p>description:   </p>
+ * <p>description: 必须和 LengthFieldBasedFrameDecoder 一起使用，确保接到的 ByteBuf 消息是完整的  </p>
  */
 @ChannelHandler.Sharable
 public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol> {
@@ -31,7 +31,7 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
     protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) throws Exception {
         if (byteBuf.readableBytes() >= BASE_LENGTH) {
             //防止收到一些体积过大的数据包
-            if (byteBuf.readableBytes() > 1500) {
+            if (byteBuf.readableBytes() > 2048) {
                 //这里需要重置下读索引，否则会导致内存泄漏
                 byteBuf.skipBytes(byteBuf.readableBytes());
             }
