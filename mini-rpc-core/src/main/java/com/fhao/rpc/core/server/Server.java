@@ -47,6 +47,7 @@ public class Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
+
     RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
 
     private static IRpcListenerLoader iRpcListenerLoader;
@@ -79,13 +80,13 @@ public class Server {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
-//                ch.pipeline().addLast(new ProcotolFrameDecoder());
-//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
-                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
-                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(serverConfig.getMaxServerRequestData(), delimiter));
-                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
-                ch.pipeline().addLast(new RpcDecoder());
-                ch.pipeline().addLast(new RpcEncoder());
+                ch.pipeline().addLast(new ProcotolFrameDecoder());
+                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+//                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+//                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(serverConfig.getMaxServerRequestData(), delimiter));
+//                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+//                ch.pipeline().addLast(new RpcDecoder());
+//                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ServerHandler());
             }
 

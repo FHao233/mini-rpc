@@ -10,61 +10,74 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RpcReferenceWrapper <T>{
     private Class<T> aimClass;
-    private Map<String,Object> attatchments = new ConcurrentHashMap<>();
+    private Map<String,Object> attachments = new ConcurrentHashMap<>();
 
     public Class<T> getAimClass() {
         return aimClass;
     }
+
+    public int getRetry(){
+        if(attachments.get("retry")==null){
+            return 0;
+        }else {
+            return (int) attachments.get("retry");
+        }
+    }
+
+    public void setRetry(int retry){
+        this.attachments.put("retry",retry);
+    }
+
 
     public void setAimClass(Class<T> aimClass) {
         this.aimClass = aimClass;
     }
 
     public boolean isAsync(){
-        return Boolean.parseBoolean(String.valueOf(attatchments.get("async")));
+        return Boolean.parseBoolean(String.valueOf(attachments.get("async")));
     }
 
     public void setAsync(boolean async){
-        this.attatchments.put("async",async);
+        this.attachments.put("async",async);
     }
 
     public String getTimeOUt() {
 
-        return String.valueOf(attatchments.get("timeOut"));
+        return String.valueOf(attachments.get("timeOut"));
     }
     public void setTimeOut(int timeOut) {
-        attatchments.put("timeOut", timeOut);
+        attachments.put("timeOut", timeOut);
     }
 
     public String getUrl(){
-        return String.valueOf(attatchments.get("url"));
+        return String.valueOf(attachments.get("url"));
     }
 
     public void setUrl(String url){
-        attatchments.put("url",url);
+        attachments.put("url",url);
     }
 
     public String getServiceToken(){
-        return String.valueOf(attatchments.get("serviceToken"));
+        return String.valueOf(attachments.get("serviceToken"));
     }
 
     public void setServiceToken(String serviceToken){
-        attatchments.put("serviceToken",serviceToken);
+        attachments.put("serviceToken",serviceToken);
     }
 
     public String getGroup(){
-        return String.valueOf(attatchments.get("group"));
+        return String.valueOf(attachments.get("group"));
     }
 
     public void setGroup(String group){
-        attatchments.put("group",group);
+        attachments.put("group",group);
     }
 
-    public Map<String, Object> getAttatchments() {
-        return attatchments;
+    public Map<String, Object> getAttachments() {
+        return attachments;
     }
 
-    public void setAttatchments(Map<String, Object> attatchments) {
-        this.attatchments = attatchments;
+    public void setAttachments(Map<String, Object> attachments) {
+        this.attachments = attachments;
     }
 }

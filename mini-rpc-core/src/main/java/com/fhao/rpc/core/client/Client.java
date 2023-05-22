@@ -78,13 +78,13 @@ public class Client {
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-//                ch.pipeline().addLast(new ProcotolFrameDecoder());
-//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
-                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
-                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(clientConfig.getMaxServerRespDataSize(), delimiter));
-                ch.pipeline().addLast(LOGGING_HANDLER);
-                ch.pipeline().addLast(new RpcDecoder());
-                ch.pipeline().addLast(new RpcEncoder());
+                ch.pipeline().addLast(new ProcotolFrameDecoder());
+                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+//                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+//                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(clientConfig.getMaxServerRespDataSize(), delimiter));
+//                ch.pipeline().addLast(LOGGING_HANDLER);
+//                ch.pipeline().addLast(new RpcDecoder());
+//                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ClientHandler());
             }
         });
@@ -208,8 +208,8 @@ public class Client {
                 try {
                     //阻塞模式
                     RpcInvocation data = SEND_QUEUE.take(); //从队列中取出数据
-                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));//封装成rpc协议
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);//获取channel
+                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));//封装成rpc协议
                     channelFuture.channel().writeAndFlush(rpcProtocol);//发送数据
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -221,12 +221,13 @@ public class Client {
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
         RpcReference rpcReference = client.initClientApplication();
-        client.initClientConfig();
+
         RpcReferenceWrapper<DataService> rpcReferenceWrapper = new RpcReferenceWrapper<>();
         rpcReferenceWrapper.setAimClass(DataService.class);
         rpcReferenceWrapper.setGroup("dev");
         rpcReferenceWrapper.setServiceToken("token-a");
         rpcReferenceWrapper.setTimeOut(30000);
+        rpcReferenceWrapper.setRetry(0);
 //        rpcReferenceWrapper.setAsync(false);
         DataService dataService = rpcReference.get(rpcReferenceWrapper);//获取代理对象
         client.doSubscribeService(DataService.class); //订阅服务

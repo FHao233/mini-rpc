@@ -2,22 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>mini-rpc-provider</artifactId>
+        <groupId>com.fhao</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.fhao</groupId>
-    <artifactId>mini-rpc</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>mini-rpc-provider-user</artifactId>
 
-    <modules>
-        <module>mini-rpc-core</module>
-        <module>mini-rpc-interface</module>
-        <module>mini-rpc-spring-starter</module>
-        <module>mini-rpc-provider</module>
-        <module>mini-rpc-provider/mini-rpc-provider-goods</module>
-        <module>mini-rpc-consumer</module>
-    </modules>
-   <properties>
+    <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

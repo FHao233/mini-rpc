@@ -34,6 +34,15 @@ public class RpcInvocation implements Serializable {
     private String message;
 
     private String stackTrace;
+    private int retry;
+
+    public int getRetry() {
+        return retry;
+    }
+
+    public void setRetry(int retry) {
+        this.retry = retry;
+    }
 
     public String getMessage() {
         return message;
