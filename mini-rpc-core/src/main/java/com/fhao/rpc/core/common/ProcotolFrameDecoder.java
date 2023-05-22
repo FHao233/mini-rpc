@@ -9,7 +9,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  */
 public class ProcotolFrameDecoder extends LengthFieldBasedFrameDecoder {
     public ProcotolFrameDecoder() {
-        this(2048, 2, 4, 0, 0);
+        this(4000, 2, 4, 0, 0);
     }
 
     public ProcotolFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip) {

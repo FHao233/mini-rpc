@@ -15,6 +15,7 @@ public class DataServiceImpl implements DataService {
     @Override
     public String sendData(String body) {
         System.out.println("己收到的参数长度："+body.length());
+        int a = 1/0;
         return "success";
     }
 
@@ -25,5 +26,10 @@ public class DataServiceImpl implements DataService {
         arrayList.add("idea2");
         arrayList.add("idea3");
         return arrayList;
+    }
+
+    @Override
+    public String testErrorV2() {
+        throw new RuntimeException("error");
     }
 }

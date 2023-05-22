@@ -13,7 +13,8 @@
 
     <properties>
         <netty.version>4.1.6.Final</netty.version>
-        <fastjson.version>1.2.29</fastjson.version>
+        <fastjson.version>1.2.83</fastjson.version>
+        <fastjson2.version>2.0.26</fastjson2.version>
         <jboss-marshalling-river.version>1.4.11.Final</jboss-marshalling-river.version>
         <jboss-marshalling-serial.version>1.4.11.Final</jboss-marshalling-serial.version>
         <slf4j-api.version>1.7.13</slf4j-api.version>
@@ -29,6 +30,7 @@
     </properties>
     <dependencies>
 
+
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
@@ -40,6 +42,12 @@
             <artifactId>netty-all</artifactId>
             <version>${netty.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.alibaba.fastjson2/fastjson2 -->
+<!--        <dependency>-->
+<!--            <groupId>com.alibaba.fastjson2</groupId>-->
+<!--            <artifactId>fastjson2</artifactId>-->
+<!--            <version>${fastjson2.version}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.slf4j</groupId>

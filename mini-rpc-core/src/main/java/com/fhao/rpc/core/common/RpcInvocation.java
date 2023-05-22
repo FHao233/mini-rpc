@@ -21,6 +21,36 @@ public class RpcInvocation implements Serializable {
     private String uuid;
     //接口响应的数据塞入这个字段中（如果是异步调用或者void类型，这里就为空）
     private Object response;
+    //出现的错误信息
+    private Exception e;
+
+    public Exception getE() {
+        return e;
+    }
+
+    public void setE(Exception e) {
+        this.e = e;
+    }
+    private String message;
+
+    private String stackTrace;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
+    }
+
     private Map<String, Object> attachments = new ConcurrentHashMap<>();
 
     public Map<String, Object> getAttachments() {
@@ -70,4 +100,5 @@ public class RpcInvocation implements Serializable {
     public void setResponse(Object response) {
         this.response = response;
     }
+
 }

@@ -46,6 +46,9 @@ public class PropertiesLoader {
         }
         if (!propertiesMap.containsKey(key)) {
             String value = properties.getProperty(key);
+            if(value == null || value.equals("")){
+                return null;
+            }
             propertiesMap.put(key, value);
         }
         return String.valueOf(propertiesMap.get(key));
@@ -66,6 +69,9 @@ public class PropertiesLoader {
         }
         if (!propertiesMap.containsKey(key)) {
             String value = properties.getProperty(key);
+            if(value == null || value.equals("")){
+                return null;
+            }
             propertiesMap.put(key, value);
         }
         return Integer.valueOf(propertiesMap.get(key));

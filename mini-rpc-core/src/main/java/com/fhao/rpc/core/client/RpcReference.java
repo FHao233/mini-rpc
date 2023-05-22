@@ -34,7 +34,7 @@ public class RpcReference {
      * @param rpcReferenceWrapper
      */
     private void initGlobalRpcReferenceWrapperConfig(RpcReferenceWrapper rpcReferenceWrapper) {
-        if (rpcReferenceWrapper.getTimeOUt() == null) {
+        if (rpcReferenceWrapper.getTimeOUt().equals("null")) {
             rpcReferenceWrapper.setTimeOut(CLIENT_CONFIG.getTimeOut());
         }
     }

@@ -1,6 +1,5 @@
 package com.fhao.rpc.core.client;
 
-import com.alibaba.fastjson.JSON;
 import com.fhao.rpc.core.common.RpcInvocation;
 import com.fhao.rpc.core.common.RpcProtocol;
 import io.netty.channel.Channel;
@@ -20,7 +19,11 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         RpcProtocol rpcProtocol = (RpcProtocol) msg;//这里的msg就是RpcProtocol对象
-        RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(), RpcInvocation.class);
+        byte[] reqContent = rpcProtocol.getContent();
+        RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(reqContent, RpcInvocation.class);
+        if (rpcInvocation.getE() != null) {
+            rpcInvocation.getE().printStackTrace();
+        }
         //如果是单纯异步模式的话，响应Map集合中不会存在映射值
         Object r = rpcInvocation.getAttachments().get("async");
         if(r!=null && Boolean.parseBoolean(String.valueOf(r))){

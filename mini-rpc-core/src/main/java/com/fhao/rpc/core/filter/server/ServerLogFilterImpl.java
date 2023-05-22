@@ -1,6 +1,7 @@
 package com.fhao.rpc.core.filter.server;
 
 import com.fhao.rpc.core.common.RpcInvocation;
+import com.fhao.rpc.core.common.annotations.SPI;
 import com.fhao.rpc.core.filter.IServerFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
  * <p>create time: 2023-05-20 20:13</p>
  * <p>description:   </p>
  */
+@SPI("before")
 public class ServerLogFilterImpl implements IServerFilter {
     private static Logger logger = LoggerFactory.getLogger(ServerLogFilterImpl.class);
     @Override

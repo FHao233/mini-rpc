@@ -1,16 +1,12 @@
 package com.fhao.rpc.core.server;
 
-import com.fhao.rpc.core.common.ProcotolFrameDecoder;
-import com.fhao.rpc.core.common.RpcDecoder;
-import com.fhao.rpc.core.common.RpcEncoder;
-import com.fhao.rpc.core.common.RpcProtocolCodec;
+import com.fhao.rpc.core.common.*;
+import com.fhao.rpc.core.common.annotations.SPI;
 import com.fhao.rpc.core.common.config.ServerConfig;
 import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
 import com.fhao.rpc.core.filter.IServerFilter;
-import com.fhao.rpc.core.filter.server.ServerFilterChain;
-import com.fhao.rpc.core.filter.server.ServerLogFilterImpl;
-import com.fhao.rpc.core.filter.server.ServerTokenFilterImpl;
+import com.fhao.rpc.core.filter.server.*;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
@@ -18,6 +14,8 @@ import com.fhao.rpc.core.serialize.SerializeFactory;
 import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
 import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -25,6 +23,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import com.fhao.rpc.core.common.config.PropertiesBootstrap;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
@@ -36,8 +35,7 @@ import java.util.LinkedHashMap;
 
 import static com.fhao.rpc.core.common.cache.CommonClientCache.EXTENSION_LOADER;
 import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
-import static com.fhao.rpc.core.common.constants.RpcConstants.FAST_JSON_SERIALIZE_TYPE;
-import static com.fhao.rpc.core.common.constants.RpcConstants.JDK_SERIALIZE_TYPE;
+import static com.fhao.rpc.core.common.constants.RpcConstants.*;
 import static com.fhao.rpc.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
@@ -46,7 +44,7 @@ import static com.fhao.rpc.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE
  * description:
  */
 public class Server {
-    Logger logger = LoggerFactory.getLogger(Server.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup workerGroup = null;
     RpcProtocolCodec RPC_PROTOCOL_CODEC = new RpcProtocolCodec();
@@ -74,15 +72,20 @@ public class Server {
         bootstrap.option(ChannelOption.SO_SNDBUF, 16 * 1024)
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
+        //服务端采用单一长连接的模式，这里所支持的最大连接数应该和机器本身的性能有关
+        //连接防护的handler应该绑定在Main-Reactor上
+        bootstrap.handler(new MaxConnectionLimitHandler(serverConfig.getMaxConnections()));
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 System.out.println("初始化provider过程");
-                ch.pipeline().addLast(new ProcotolFrameDecoder());
+//                ch.pipeline().addLast(new ProcotolFrameDecoder());
+//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(serverConfig.getMaxServerRequestData(), delimiter));
                 ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
-                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
-//                ch.pipeline().addLast(new RpcDecoder());
-//                ch.pipeline().addLast(new RpcEncoder());
+                ch.pipeline().addLast(new RpcDecoder());
+                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ServerHandler());
             }
 
@@ -91,20 +94,10 @@ public class Server {
         bootstrap.bind(serverConfig.getServerPort()).sync();
         SERVER_CHANNEL_DISPATCHER.startDataConsume();//开始准备接收请求的任务
         IS_STARTED = true;
+        LOGGER.info("[startApplication] server is started!");
+
     }
 
-    public void registyService(Object serviceBean) {
-        if (serviceBean.getClass().getInterfaces().length == 0) {
-            throw new RuntimeException("service must had interfaces!");
-        }
-        Class[] classes = serviceBean.getClass().getInterfaces();
-        if (classes.length > 1) {
-            throw new RuntimeException("service must only had one interfaces!");
-        }
-        Class interfaceClass = classes[0];
-        //需要注册的对象统一放在一个MAP集合中进行管理
-        PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
-    }
 
     /**
      * 暴露服务信息
@@ -133,6 +126,8 @@ public class Server {
         url.addParameter("port", String.valueOf(serverConfig.getServerPort()));
         url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
         url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
+        //设置服务端的限流器
+        SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(), new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
         if (CommonUtils.isNotEmpty(serviceWrapper.getServiceToken())) {
             PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
@@ -167,7 +162,7 @@ public class Server {
         EXTENSION_LOADER.loadExtension(SerializeFactory.class);
         LinkedHashMap<String, Class> serializeFactoryClassMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
         Class serializeFactoryClass = serializeFactoryClassMap.get(serverSerialize);
-        logger.debug("the client serialize type is {}", serverSerialize);
+        LOGGER.debug("the client serialize type is {}", serverSerialize);
         if (serializeFactoryClass == null) {
             throw new RuntimeException("no match serialize type for " + serverSerialize);
         }
@@ -175,15 +170,23 @@ public class Server {
         //过滤链技术初始化
         EXTENSION_LOADER.loadExtension(IServerFilter.class);
         LinkedHashMap<String, Class> iServerFilterClassMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
-        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        ServerBeforeFilterChain serverBeforeFilterChain = new ServerBeforeFilterChain();
+        ServerAfterFilterChain serverAfterFilterChain = new ServerAfterFilterChain();
+        //过滤器初始化环节新增 前置过滤器和后置过滤器
         for (String iServerFilterKey : iServerFilterClassMap.keySet()) {
             Class iServerFilterClass = iServerFilterClassMap.get(iServerFilterKey);
             if (iServerFilterClass == null) {
                 throw new RuntimeException("no match iServerFilter type for " + iServerFilterKey);
             }
-            serverFilterChain.addServerFilter((IServerFilter) iServerFilterClass.getDeclaredConstructor().newInstance());
+            SPI spi = (SPI) iServerFilterClass.getDeclaredAnnotation(SPI.class);
+            if (spi != null && "before".equals(spi.value())) {
+                serverBeforeFilterChain.addServerFilter((IServerFilter) iServerFilterClass.newInstance());
+            } else if (spi != null && "after".equals(spi.value())) {
+                serverAfterFilterChain.addServerFilter((IServerFilter) iServerFilterClass.newInstance());
+            }
         }
-        SERVER_FILTER_CHAIN = serverFilterChain;
+        SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
+        SERVER_BEFORE_FILTER_CHAIN = serverBeforeFilterChain;
     }
 
     public static void main(String[] args) throws Exception {

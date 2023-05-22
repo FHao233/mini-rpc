@@ -1,2 +1,4 @@
 serverLogFilterImpl=com.fhao.rpc.core.filter.server.ServerLogFilterImpl
 serverTokenFilterImpl=com.fhao.rpc.core.filter.server.ServerTokenFilterImpl
+serverServiceBeforeLimitFilterImpl=com.fhao.rpc.core.filter.server.ServerServiceBeforeLimitFilterImpl
+serverServiceAfterLimitFilterImpl=com.fhao.rpc.core.filter.server.ServerServiceAfterLimitFilterImpl

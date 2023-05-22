@@ -8,29 +8,23 @@ import com.fhao.rpc.core.common.event.IRpcListenerLoader;
 import com.fhao.rpc.core.common.utils.CommonUtils;
 import com.fhao.rpc.core.filter.IClientFilter;
 import com.fhao.rpc.core.filter.client.ClientFilterChain;
-import com.fhao.rpc.core.filter.client.ClientLogFilterImpl;
-import com.fhao.rpc.core.filter.client.DirectInvokeFilterImpl;
-import com.fhao.rpc.core.filter.client.GroupFilterImpl;
-import com.fhao.rpc.core.proxy.javassist.JavassistProxyFactory;
-import com.fhao.rpc.core.proxy.jdk.JDKProxyFactory;
+import com.fhao.rpc.core.proxy.ProxyFactory;
 import com.fhao.rpc.core.registy.RegistryService;
 import com.fhao.rpc.core.registy.URL;
 import com.fhao.rpc.core.registy.zookeeper.AbstractRegister;
-import com.fhao.rpc.core.registy.zookeeper.ZookeeperRegister;
 import com.fhao.rpc.core.router.IRouter;
-import com.fhao.rpc.core.router.RandomRouterImpl;
-import com.fhao.rpc.core.router.RotateRouterImpl;
 import com.fhao.rpc.core.serialize.SerializeFactory;
-import com.fhao.rpc.core.serialize.fastjson.FastJsonSerializeFactory;
-import com.fhao.rpc.core.serialize.jdk.JdkSerializeFactory;
 import com.fhao.rpc.interfaces.DataService;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
@@ -77,18 +71,20 @@ public class Client {
         this.clientConfig = clientConfig;
     }
 
-    public RpcReference initClientApplication() {
+    public RpcReference initClientApplication() throws Exception {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new ProcotolFrameDecoder());
+//                ch.pipeline().addLast(new ProcotolFrameDecoder());
+//                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(clientConfig.getMaxServerRespDataSize(), delimiter));
                 ch.pipeline().addLast(LOGGING_HANDLER);
-                ch.pipeline().addLast(RPC_PROTOCOL_CODEC);
-//                ch.pipeline().addLast(new RpcDecoder());
-//                ch.pipeline().addLast(new RpcEncoder());
+                ch.pipeline().addLast(new RpcDecoder());
+                ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new ClientHandler());
             }
         });
@@ -96,13 +92,14 @@ public class Client {
         iRpcListenerLoader.init();
         this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
         CLIENT_CONFIG = this.clientConfig;
-        RpcReference rpcReference;
-        if (JAVASSIST_PROXY_TYPE.equals(clientConfig.getProxyType())) {
-            rpcReference = new RpcReference(new JavassistProxyFactory());
-        } else {
-            rpcReference = new RpcReference(new JDKProxyFactory());
-        }
-        return rpcReference;
+        //spi扩展的加载部分
+        this.initClientConfig();
+        EXTENSION_LOADER.loadExtension(ProxyFactory.class);
+        String proxyType = clientConfig.getProxyType();
+        LinkedHashMap<String, Class> classMap = EXTENSION_LOADER_CLASS_CACHE.get(ProxyFactory.class.getName());
+        Class proxyClassType = classMap.get(proxyType);
+        ProxyFactory proxyFactory = (ProxyFactory) proxyClassType.newInstance();
+        return new RpcReference(proxyFactory);
     }
 
     /**
@@ -112,7 +109,6 @@ public class Client {
      */
     public void doSubscribeService(Class serviceBean) {
         if (ABSTRACT_REGISTER == null) {
-//            ABSTRACT_REGISTER = new ZookeeperRegister(clientConfig.getRegisterAddr());
             try {
                 EXTENSION_LOADER.loadExtension(RegistryService.class);
                 Map<String, Class> registerMap = EXTENSION_LOADER_CLASS_CACHE.get(RegistryService.class.getName());
@@ -230,23 +226,27 @@ public class Client {
         rpcReferenceWrapper.setAimClass(DataService.class);
         rpcReferenceWrapper.setGroup("dev");
         rpcReferenceWrapper.setServiceToken("token-a");
-        rpcReferenceWrapper.setTimeOut(3000);
-        rpcReferenceWrapper.setAsync(false);
+        rpcReferenceWrapper.setTimeOut(30000);
+//        rpcReferenceWrapper.setAsync(false);
         DataService dataService = rpcReference.get(rpcReferenceWrapper);//获取代理对象
         client.doSubscribeService(DataService.class); //订阅服务
         ConnectionHandler.setBootstrap(client.getBootstrap()); //设置bootstrap
 
         client.doConnectServer();//建立连接
         client.startClient();
-        for (int i = 0; i < 100; i++) {
-            try {
-                String result = dataService.sendData("test");
-                System.out.println(result);
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+
+
+        dataService.testErrorV2();
+        Thread.sleep(1000);
+//        for (int i = 0; i < 100; i++) {
+//            try {
+//                String result = dataService.sendData("test");
+//                System.out.println(result);
+//                Thread.sleep(1000);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
 //        }
+//
     }
 }

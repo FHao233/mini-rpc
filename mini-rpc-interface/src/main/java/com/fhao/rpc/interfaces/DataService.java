@@ -22,4 +22,10 @@ public interface DataService {
      * @return
      */
     List<String> getList();
+
+
+    /**
+     * 异常测试方法
+     */
+    String testErrorV2();
 }

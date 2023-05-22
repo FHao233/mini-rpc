@@ -1,7 +1,5 @@
 package com.fhao.rpc.core.server;
 
-import com.alibaba.fastjson.JSON;
-import com.fhao.rpc.core.common.RpcInvocation;
 import com.fhao.rpc.core.common.RpcProtocol;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -9,10 +7,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
 
 /**
@@ -25,7 +19,7 @@ import static com.fhao.rpc.core.common.cache.CommonServerCache.*;
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     Logger logger = LoggerFactory.getLogger(ServerHandler.class);
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InvocationTargetException, IllegalAccessException {
+    public void channelRead(ChannelHandlerContext ctx, Object msg){
         ServerChannelReadData serverChannelReadData = new ServerChannelReadData();
         serverChannelReadData.setChannelHandlerContext(ctx);
         serverChannelReadData.setRpcProtocol((RpcProtocol) msg);
